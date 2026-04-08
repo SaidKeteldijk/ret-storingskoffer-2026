@@ -1,0 +1,8 @@
+# Storingskoffer – afhankelijkheden
+# Installeer met: pip install -r requirements.txt
+
+PyQt5>=5.15          # GUI framework (Windows, Linux, macOS, Raspberry Pi OS)
+
+# Alleen op Raspberry Pi:
+# RPi.GPIO>=0.7       # sudo apt install python3-rpi.gpio
+#                     # of: pip install RPi.GPIO

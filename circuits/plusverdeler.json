@@ -1,0 +1,489 @@
+{
+  "components": [
+    {
+      "type": "voeding",
+      "col": 1,
+      "row": 0,
+      "label": "+V1",
+      "rotation": 90,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "voeding",
+      "col": 1,
+      "row": 1,
+      "label": "+V2",
+      "rotation": 90,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "voeding",
+      "col": 1,
+      "row": 2,
+      "label": "+V3",
+      "rotation": 90,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 5,
+      "row": 10,
+      "label": "S1",
+      "rotation": 90,
+      "contact_start": 1,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 5,
+      "row": 15,
+      "label": "S2",
+      "rotation": 90,
+      "contact_start": 4,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "voeding",
+      "col": 1,
+      "row": 3,
+      "label": "+V4",
+      "rotation": 90,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "relaisspoel",
+      "col": 5,
+      "row": 18,
+      "label": "K1",
+      "rotation": 90,
+      "contact_start": 7,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "massa",
+      "col": 5,
+      "row": 21,
+      "label": "GND1",
+      "rotation": 0,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 11,
+      "row": 10,
+      "label": "S3",
+      "rotation": 90,
+      "contact_start": 9,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 18,
+      "row": 6,
+      "label": "S4",
+      "rotation": 90,
+      "contact_start": 12,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 18,
+      "row": 10,
+      "label": "S5",
+      "rotation": 90,
+      "contact_start": 15,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 18,
+      "row": 14,
+      "label": "S6",
+      "rotation": 90,
+      "contact_start": 18,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 25,
+      "row": 5,
+      "label": "S7",
+      "rotation": 90,
+      "contact_start": 21,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 25,
+      "row": 10,
+      "label": "S8",
+      "rotation": 90,
+      "contact_start": 24,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "relaisspoel",
+      "col": 18,
+      "row": 19,
+      "label": "K2",
+      "rotation": 90,
+      "contact_start": 27,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "relaisspoel",
+      "col": 25,
+      "row": 19,
+      "label": "K3",
+      "rotation": 90,
+      "contact_start": 29,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "massa",
+      "col": 18,
+      "row": 21,
+      "label": "GND2",
+      "rotation": 0,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "massa",
+      "col": 25,
+      "row": 21,
+      "label": "GND3",
+      "rotation": 0,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 36,
+      "row": 5,
+      "label": "S9",
+      "rotation": 90,
+      "contact_start": 31,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 44,
+      "row": 5,
+      "label": "S10",
+      "rotation": 90,
+      "contact_start": 34,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 37,
+      "row": 12,
+      "label": "S11",
+      "rotation": 90,
+      "contact_start": 37,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "massa",
+      "col": 37,
+      "row": 21,
+      "label": "GND4",
+      "rotation": 0,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "relaisspoel",
+      "col": 37,
+      "row": 19,
+      "label": "K4",
+      "rotation": 90,
+      "contact_start": 40,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    }
+  ],
+  "wires": [
+    {
+      "c1": 2,
+      "r1": 0,
+      "c2": 52,
+      "r2": 0
+    },
+    {
+      "c1": 2,
+      "r1": 1,
+      "c2": 52,
+      "r2": 1
+    },
+    {
+      "c1": 2,
+      "r1": 2,
+      "c2": 52,
+      "r2": 2
+    },
+    {
+      "c1": 1,
+      "r1": 2,
+      "c2": 2,
+      "r2": 2
+    },
+    {
+      "c1": 1,
+      "r1": 1,
+      "c2": 2,
+      "r2": 1
+    },
+    {
+      "c1": 1,
+      "r1": 0,
+      "c2": 2,
+      "r2": 0
+    },
+    {
+      "c1": 1,
+      "r1": 3,
+      "c2": 52,
+      "r2": 3
+    },
+    {
+      "c1": 6,
+      "r1": 9,
+      "c2": 6,
+      "r2": 0
+    },
+    {
+      "c1": 5,
+      "r1": 11,
+      "c2": 5,
+      "r2": 12
+    },
+    {
+      "c1": 5,
+      "r1": 12,
+      "c2": 4,
+      "r2": 12
+    },
+    {
+      "c1": 4,
+      "r1": 12,
+      "c2": 4,
+      "r2": 14
+    },
+    {
+      "c1": 5,
+      "r1": 21,
+      "c2": 5,
+      "r2": 19
+    },
+    {
+      "c1": 5,
+      "r1": 17,
+      "c2": 5,
+      "r2": 16
+    },
+    {
+      "c1": 12,
+      "r1": 9,
+      "c2": 12,
+      "r2": 2
+    },
+    {
+      "c1": 11,
+      "r1": 11,
+      "c2": 11,
+      "r2": 17
+    },
+    {
+      "c1": 11,
+      "r1": 17,
+      "c2": 5,
+      "r2": 17
+    },
+    {
+      "c1": 19,
+      "r1": 5,
+      "c2": 19,
+      "r2": 0
+    },
+    {
+      "c1": 18,
+      "r1": 7,
+      "c2": 18,
+      "r2": 8
+    },
+    {
+      "c1": 18,
+      "r1": 8,
+      "c2": 17,
+      "r2": 8
+    },
+    {
+      "c1": 17,
+      "r1": 8,
+      "c2": 17,
+      "r2": 9
+    },
+    {
+      "c1": 18,
+      "r1": 11,
+      "c2": 18,
+      "r2": 12
+    },
+    {
+      "c1": 18,
+      "r1": 12,
+      "c2": 17,
+      "r2": 12
+    },
+    {
+      "c1": 17,
+      "r1": 12,
+      "c2": 17,
+      "r2": 13
+    },
+    {
+      "c1": 24,
+      "r1": 4,
+      "c2": 24,
+      "r2": 0
+    },
+    {
+      "c1": 25,
+      "r1": 6,
+      "c2": 25,
+      "r2": 8
+    },
+    {
+      "c1": 25,
+      "r1": 8,
+      "c2": 24,
+      "r2": 8
+    },
+    {
+      "c1": 24,
+      "r1": 8,
+      "c2": 24,
+      "r2": 9
+    },
+    {
+      "c1": 25,
+      "r1": 11,
+      "c2": 25,
+      "r2": 17
+    },
+    {
+      "c1": 18,
+      "r1": 15,
+      "c2": 18,
+      "r2": 17
+    },
+    {
+      "c1": 18,
+      "r1": 17,
+      "c2": 25,
+      "r2": 17
+    },
+    {
+      "c1": 18,
+      "r1": 18,
+      "c2": 18,
+      "r2": 17
+    },
+    {
+      "c1": 18,
+      "r1": 20,
+      "c2": 18,
+      "r2": 21
+    },
+    {
+      "c1": 25,
+      "r1": 18,
+      "c2": 25,
+      "r2": 17
+    },
+    {
+      "c1": 25,
+      "r1": 20,
+      "c2": 25,
+      "r2": 21
+    },
+    {
+      "c1": 35,
+      "r1": 4,
+      "c2": 35,
+      "r2": 0
+    },
+    {
+      "c1": 43,
+      "r1": 4,
+      "c2": 43,
+      "r2": 0
+    },
+    {
+      "c1": 36,
+      "r1": 6,
+      "c2": 36,
+      "r2": 9
+    },
+    {
+      "c1": 44,
+      "r1": 6,
+      "c2": 44,
+      "r2": 9
+    },
+    {
+      "c1": 36,
+      "r1": 9,
+      "c2": 44,
+      "r2": 9
+    },
+    {
+      "c1": 36,
+      "r1": 11,
+      "c2": 36,
+      "r2": 9
+    },
+    {
+      "c1": 37,
+      "r1": 21,
+      "c2": 37,
+      "r2": 20
+    },
+    {
+      "c1": 37,
+      "r1": 18,
+      "c2": 37,
+      "r2": 13
+    }
+  ],
+  "naam": "plusverdeler"
+}

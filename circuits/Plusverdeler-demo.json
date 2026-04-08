@@ -1,0 +1,193 @@
+{
+  "components": [
+    {
+      "type": "voeding",
+      "col": 1,
+      "row": 0,
+      "label": "+V1",
+      "rotation": 90,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "voeding",
+      "col": 1,
+      "row": 1,
+      "label": "+V2",
+      "rotation": 90,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "voeding",
+      "col": 1,
+      "row": 2,
+      "label": "+V3",
+      "rotation": 90,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 5,
+      "row": 10,
+      "label": "S1",
+      "rotation": 90,
+      "contact_start": 1,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 5,
+      "row": 15,
+      "label": "S2",
+      "rotation": 90,
+      "contact_start": 4,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "voeding",
+      "col": 1,
+      "row": 3,
+      "label": "+V4",
+      "rotation": 90,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "relaisspoel",
+      "col": 5,
+      "row": 18,
+      "label": "K1",
+      "rotation": 90,
+      "contact_start": 7,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "massa",
+      "col": 5,
+      "row": 21,
+      "label": "GND1",
+      "rotation": 0,
+      "contact_start": 0,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    },
+    {
+      "type": "spdt",
+      "col": 11,
+      "row": 10,
+      "label": "S3",
+      "rotation": 90,
+      "contact_start": 9,
+      "gpio_pin": -1,
+      "gpio_dir": "IN"
+    }
+  ],
+  "wires": [
+    {
+      "c1": 2,
+      "r1": 0,
+      "c2": 52,
+      "r2": 0
+    },
+    {
+      "c1": 2,
+      "r1": 1,
+      "c2": 52,
+      "r2": 1
+    },
+    {
+      "c1": 2,
+      "r1": 2,
+      "c2": 52,
+      "r2": 2
+    },
+    {
+      "c1": 1,
+      "r1": 2,
+      "c2": 2,
+      "r2": 2
+    },
+    {
+      "c1": 1,
+      "r1": 1,
+      "c2": 2,
+      "r2": 1
+    },
+    {
+      "c1": 1,
+      "r1": 0,
+      "c2": 2,
+      "r2": 0
+    },
+    {
+      "c1": 1,
+      "r1": 3,
+      "c2": 52,
+      "r2": 3
+    },
+    {
+      "c1": 6,
+      "r1": 9,
+      "c2": 6,
+      "r2": 0
+    },
+    {
+      "c1": 5,
+      "r1": 11,
+      "c2": 5,
+      "r2": 12
+    },
+    {
+      "c1": 5,
+      "r1": 12,
+      "c2": 4,
+      "r2": 12
+    },
+    {
+      "c1": 4,
+      "r1": 12,
+      "c2": 4,
+      "r2": 14
+    },
+    {
+      "c1": 5,
+      "r1": 21,
+      "c2": 5,
+      "r2": 19
+    },
+    {
+      "c1": 5,
+      "r1": 17,
+      "c2": 5,
+      "r2": 16
+    },
+    {
+      "c1": 12,
+      "r1": 9,
+      "c2": 12,
+      "r2": 2
+    },
+    {
+      "c1": 11,
+      "r1": 11,
+      "c2": 11,
+      "r2": 17
+    },
+    {
+      "c1": 11,
+      "r1": 17,
+      "c2": 5,
+      "r2": 17
+    }
+  ],
+  "naam": "Plusverdeler-demo"
+}

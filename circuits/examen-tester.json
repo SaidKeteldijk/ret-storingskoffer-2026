@@ -1,0 +1,296 @@
+{
+  "components": [
+    {
+      "type": "voeding",
+      "col": 1,
+      "row": 2,
+      "label": "+V1",
+      "rotation": 90,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 6,
+      "row": 7,
+      "label": "K1",
+      "rotation": 90,
+      "contact_start": 1,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 6,
+      "row": 11,
+      "label": "K2",
+      "rotation": 90,
+      "contact_start": 4,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "lamp",
+      "col": 6,
+      "row": 16,
+      "label": "H1",
+      "rotation": 90,
+      "contact_start": 7,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "motor",
+      "col": 11,
+      "row": 16,
+      "label": "M1",
+      "rotation": 90,
+      "contact_start": 9,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "massa",
+      "col": 11,
+      "row": 19,
+      "label": "GND1",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "massa",
+      "col": 6,
+      "row": 19,
+      "label": "GND2",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "schakelaar",
+      "col": 17,
+      "row": 7,
+      "label": "S1",
+      "rotation": 90,
+      "contact_start": 11,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "schakelaar",
+      "col": 22,
+      "row": 7,
+      "label": "S2",
+      "rotation": 90,
+      "contact_start": 13,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "relaisspoel",
+      "col": 17,
+      "row": 10,
+      "label": "K1",
+      "rotation": 90,
+      "contact_start": 15,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "relaisspoel",
+      "col": 22,
+      "row": 10,
+      "label": "K2",
+      "rotation": 90,
+      "contact_start": 17,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "lamp",
+      "col": 17,
+      "row": 13,
+      "label": "H2",
+      "rotation": 90,
+      "contact_start": 19,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "lamp",
+      "col": 22,
+      "row": 13,
+      "label": "H3",
+      "rotation": 90,
+      "contact_start": 21,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "massa",
+      "col": 17,
+      "row": 16,
+      "label": "GND3",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    },
+    {
+      "type": "massa",
+      "col": 22,
+      "row": 16,
+      "label": "GND4",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false
+    }
+  ],
+  "wires": [
+    {
+      "c1": 1,
+      "r1": 2,
+      "c2": 37,
+      "r2": 2
+    },
+    {
+      "c1": 5,
+      "r1": 2,
+      "c2": 5,
+      "r2": 6
+    },
+    {
+      "c1": 6,
+      "r1": 8,
+      "c2": 6,
+      "r2": 9
+    },
+    {
+      "c1": 6,
+      "r1": 9,
+      "c2": 7,
+      "r2": 9
+    },
+    {
+      "c1": 7,
+      "r1": 10,
+      "c2": 7,
+      "r2": 9
+    },
+    {
+      "c1": 6,
+      "r1": 12,
+      "c2": 6,
+      "r2": 15
+    },
+    {
+      "c1": 11,
+      "r1": 15,
+      "c2": 11,
+      "r2": 14
+    },
+    {
+      "c1": 11,
+      "r1": 14,
+      "c2": 6,
+      "r2": 14
+    },
+    {
+      "c1": 17,
+      "r1": 6,
+      "c2": 17,
+      "r2": 2
+    },
+    {
+      "c1": 22,
+      "r1": 6,
+      "c2": 22,
+      "r2": 2
+    },
+    {
+      "c1": 17,
+      "r1": 9,
+      "c2": 17,
+      "r2": 8
+    },
+    {
+      "c1": 22,
+      "r1": 9,
+      "c2": 22,
+      "r2": 8
+    },
+    {
+      "c1": 17,
+      "r1": 12,
+      "c2": 17,
+      "r2": 11
+    },
+    {
+      "c1": 22,
+      "r1": 12,
+      "c2": 22,
+      "r2": 11
+    },
+    {
+      "c1": 17,
+      "r1": 16,
+      "c2": 17,
+      "r2": 14
+    },
+    {
+      "c1": 22,
+      "r1": 16,
+      "c2": 22,
+      "r2": 14
+    },
+    {
+      "c1": 6,
+      "r1": 19,
+      "c2": 6,
+      "r2": 17
+    },
+    {
+      "c1": 11,
+      "r1": 19,
+      "c2": 11,
+      "r2": 17
+    }
+  ],
+  "exam_time_minutes": 10,
+  "naam": "examen-tester"
+}
