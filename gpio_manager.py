@@ -1,11 +1,3 @@
-"""
-gpio_manager.py – MockGPIO, GPIO initialisatie en GPIOManager.
-RET N.V. | Said Keteldijk (1045604)
-
-Windows/Mac: MockGPIO actief automatisch (geen hardware nodig).
-Raspberry Pi: pip install RPi.GPIO  of  sudo apt install python3-rpi.gpio
-"""
-
 from typing import Dict, List
 from constants import VALID_GPIO_PINS
 
