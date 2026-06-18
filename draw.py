@@ -168,14 +168,26 @@ def _ec_rspdt(p, label, cs, positie_c=False, flipped=False):
 
 def _ec_relaisspoel(p, label, cs, actief=False):
     kleur = C_YELLOW if actief else C_PEACH
+    tekst = label if label else "K"
+
+    p.setFont(QFont("Courier New", 9, QFont.Bold))
+    fm = p.fontMetrics()
+    body_w = max(44, fm.horizontalAdvance(tekst) + 14)
+    body_w = min(body_w, CONN * 2 - 16)
+    body_h = 22
+    half_w = body_w // 2
+    half_h = body_h // 2
+
     p.setPen(QPen(QColor(kleur), 2))
     p.setBrush(QBrush(QColor(kleur + "33") if actief else Qt.transparent))
-    p.drawLine(-CONN, 0, -11, 0)
-    p.drawLine(11, 0, CONN, 0)
-    p.drawRect(-11, -7, 22, 14)
+    p.drawLine(-CONN, 0, -half_h, 0)
+    p.drawLine(half_h, 0, CONN, 0)
+    p.save()
+    p.rotate(270)
+    p.drawRect(-half_w, -half_h, body_w, body_h)
     p.setPen(QColor(kleur))
-    p.setFont(QFont("Courier New", 9, QFont.Bold))
-    p.drawText(-len(label) * 4, 5, label)
+    p.drawText(-half_w, -half_h, body_w, body_h, Qt.AlignCenter, tekst)
+    p.restore()
     p.setFont(QFont("Courier New", 12))
     p.drawText(-CONN + 2, 10, str(cs))
     p.drawText(CONN - 10, 10, str(cs + 1))

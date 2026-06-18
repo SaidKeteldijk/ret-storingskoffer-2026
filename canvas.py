@@ -602,7 +602,8 @@ class CircuitCanvas(QWidget):
             else:
                 label = self._auto_label(self.tool)
                 # contact_start tijdelijk 1; renumber_contacts stelt de juiste waarde in
-                self.components.append(Component(self.tool, col, row, label, 90, 1))
+                rotation = 0 if self.tool == TOOL_RCOIL else 90
+                self.components.append(Component(self.tool, col, row, label, rotation, 1))
                 renumber_contacts(self.components)   # herbereken ÁLle nummers
                 renumber_auto_labels(self.components)
 
