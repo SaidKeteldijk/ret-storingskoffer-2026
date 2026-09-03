@@ -309,7 +309,7 @@ class CircuitCanvas(QWidget):
       "sim"  – simulatie: schakelaar klikken, draden oplichten
     """
 
-    def __init__(self):
+    def __init__(self, gpio: bool = True):
         super().__init__()
         # Circuit data
         self.components: List[Component] = []
@@ -336,8 +336,9 @@ class CircuitCanvas(QWidget):
         self.exam_seconds_left  = 0       # resterende seconden (door MainWindow beheerd)
         self.exam_total_seconds = 0       # totale examenduur in seconden
 
-        # GPIO
-        self.gpio_mgr = GPIOManager()
+        # GPIO – het monteursscherm is een statische weergave en krijgt geen
+        # eigen manager: twee managers op dezelfde pinnen botsen.
+        self.gpio_mgr = GPIOManager() if gpio else None
         self._gpio_timer = QTimer(self)
         self._gpio_timer.setInterval(50)
         self._gpio_timer.timeout.connect(self._gpio_poll)
@@ -355,11 +356,12 @@ class CircuitCanvas(QWidget):
         self.mode = mode
         if mode == "sim":
             self.sim.load(self.components, self.wires)
-            self.gpio_mgr.configure_pins(self.components)
-            self._gpio_timer.start()
+            if self.gpio_mgr:
+                self.gpio_mgr.configure_pins(self.components)
+                self._gpio_timer.start()
         else:
             self._gpio_timer.stop()
-            if prev == "sim":
+            if prev == "sim" and self.gpio_mgr:
                 self.gpio_mgr.cleanup()
         self.wire_start = None
         self.selected   = None
@@ -374,6 +376,9 @@ class CircuitCanvas(QWidget):
         2. Bereken nieuwe simulatietoestand
         3. Schrijf GPIO outputs op basis van actieve componenten
         """
+        if not self.gpio_mgr:
+            return
+
         # INPUT: GPIO → simulator
         gpio_inputs = self.gpio_mgr.read_inputs(self.components)
         changed = False
@@ -1598,6 +1603,10 @@ class MainWindow(QMainWindow):
 
         hoofd.addWidget(zij); hoofd.addWidget(rechts)
 
+        # Monteursvenster op het tweede scherm (door main.py gekoppeld).
+        # Blijft None als de app op één scherm zonder examenweergave draait.
+        self.monteur = None
+
         # Examentimer (MainWindow beheert de countdown)
         self._exam_timer = QTimer(self)
         self._exam_timer.setInterval(1000)
@@ -1666,6 +1675,9 @@ class MainWindow(QMainWindow):
         self.gpio_monitor.setVisible(False)
         self.titel.setText(f"  {naam}")
         self.status.setText(f"Geladen: {naam}")
+        # Haal een blijven staande "Einde examen" van het monteursscherm.
+        if self.monteur:
+            self.monteur.wachtstand()
 
     def _start_sim(self):
         self.canvas.set_mode("sim")
@@ -1738,6 +1750,12 @@ class MainWindow(QMainWindow):
         self.gpio_monitor.setVisible(False)
         self.gpio_knop.setVisible(False)
 
+        # Zet de schakeling op het monteursscherm. Dit gebeurt bewust één keer:
+        # de monteur krijgt een statische tekening van de opgave.
+        if self.monteur:
+            self.monteur.start_examen(self.canvas.components,
+                                      self.canvas.wires, totaal)
+
         # Start countdown
         self._exam_timer.start(1000)
 
@@ -1766,6 +1784,11 @@ class MainWindow(QMainWindow):
         self.canvas.exam_active = False
         self.canvas.set_mode("view")
         self._update_examen_ui(running=False)
+
+        # Het monteursscherm toont "Einde examen" – ook als de instructeur
+        # handmatig stopt. De onthulling hieronder blijft op dít scherm.
+        if self.monteur:
+            self.monteur.einde_examen()
 
         # Titelbalk opschonen
         naam = self.titel.text()
@@ -1808,6 +1831,12 @@ class MainWindow(QMainWindow):
         if self.canvas.exam_seconds_left <= 0:
             self.canvas.exam_seconds_left = 0
             self._exam_timer.stop()
+            # Eerst het monteursscherm bijwerken, dan pas de dialoog: die
+            # blokkeert, en de monteur zou anders naar een stilstaande
+            # timer op 00:00 blijven kijken.
+            if self.monteur:
+                self.monteur.einde_examen()
+                QApplication.processEvents()
             QMessageBox.warning(
                 self, "Tijd is om!",
                 "De examentijd is verstreken.\n\nHet examen wordt nu beëindigd."
@@ -1815,6 +1844,8 @@ class MainWindow(QMainWindow):
             self._stop_examen(reveal=True)
         else:
             self._update_examen_timer_display()
+            if self.monteur:
+                self.monteur.update_tijd(self.canvas.exam_seconds_left)
 
     def _update_examen_ui(self, running: bool):
         """Schakel tussen setup-weergave en lopende-examen-weergave."""
@@ -1900,13 +1931,27 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Fout", f"Kan circuit niet laden:\n{e}")
 
+    def keyPressEvent(self, event):
+        """F11 wisselt fullscreen – ontsnappingsroute op de Raspberry Pi."""
+        if event.key() == Qt.Key_F11:
+            if self.isFullScreen():
+                self.showNormal()
+            else:
+                self.showFullScreen()
+        else:
+            super().keyPressEvent(event)
+
     def closeEvent(self, event):
         """GPIO-pins vrijgeven bij afsluiten — alle pins naar LOW."""
         if self.canvas.exam_active:
             self._exam_timer.stop()
             self.canvas.exam_active = False
-        self.canvas.gpio_mgr.cleanup()
+        if self.canvas.gpio_mgr:
+            self.canvas.gpio_mgr.cleanup()
         self.canvas._gpio_timer.stop()
+        # Sluit het monteursvenster mee, anders blijft de app draaien.
+        if self.monteur:
+            self.monteur.close()
         event.accept()
 
 
