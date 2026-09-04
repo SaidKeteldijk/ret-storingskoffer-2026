@@ -107,9 +107,35 @@ def bepaal_indeling(app) -> SchermIndeling:
 
 def toon_op(venster, scherm):
     """
-    Zet een venster fullscreen op een specifiek scherm.
-    De volgorde is essentieel: showFullScreen() kiest het scherm waar het
-    venster op dat moment staat, dus eerst verplaatsen, dan pas fullscreen.
+    Zet een venster schermvullend op een specifiek scherm.
+
+    showFullScreen() kiest het scherm waar het venster op dat moment staat.
+    Een venster dat nog nooit getoond is staat op (0, 0) en belandt daardoor
+    altijd op het primaire scherm, ongeacht de opgegeven geometrie. Daarom
+    wordt het venster hier eerst aangemaakt en verplaatst, en pas daarna
+    schermvullend gemaakt.
     """
-    venster.setGeometry(scherm.geometry())
+    from PyQt5.QtWidgets import QApplication
+
+    geo = scherm.geometry()
+
+    venster.setGeometry(geo)
+    venster.show()                       # nu pas bestaat het native venster
+
+    handle = venster.windowHandle()
+    if handle is not None:
+        handle.setScreen(scherm)
+
+    venster.move(geo.x(), geo.y())
+    QApplication.processEvents()         # laat de compositor de verplaatsing verwerken
+
     venster.showFullScreen()
+    QApplication.processEvents()
+
+
+def huidig_scherm(venster) -> str:
+    """Naam van het scherm waar het venster daadwerkelijk op staat."""
+    handle = venster.windowHandle()
+    if handle is not None and handle.screen() is not None:
+        return handle.screen().name()
+    return "(onbekend)"
