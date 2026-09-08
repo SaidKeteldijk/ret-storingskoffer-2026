@@ -150,6 +150,26 @@ class GPIOConfigDialog(QDialog):
             f"QPushButton:hover {{ background:{C_BORDER}; }}")
         layout.addWidget(btns)
 
+    def accept(self):
+        """Weiger het sluiten zolang twee componenten dezelfde pin delen."""
+        gebruikt = {}
+        for ci in self.comp_indices:
+            pin_txt = self._pin_combos[ci].currentText()
+            if pin_txt == self.PIN_NONE:
+                continue
+            comp = self.components[ci]
+            naam = comp.label or comp.type
+            if pin_txt in gebruikt:
+                QMessageBox.warning(
+                    self, "GPIO Koppeling",
+                    f"GPIO-pin {pin_txt} is aan twee componenten "
+                    f"gekoppeld: {gebruikt[pin_txt]} en {naam}. "
+                    "Een pin kan maar één richting tegelijk hebben. "
+                    "Kies voor één van beide een andere pin.")
+                return
+            gebruikt[pin_txt] = naam
+        super().accept()
+
     def apply(self):
         """Schrijf de instellingen terug naar de componentenlijst."""
         for ci in self.comp_indices:
@@ -432,7 +452,7 @@ class CircuitCanvas(QWidget):
         comp_defaults = {"label": "", "rotation": 0, "contact_start": 1,
                          "manual_contact_start": False,
                          "gpio_pin": -1, "gpio_dir": "IN",
-                         "defect": False}
+                         "defect": False, "manual_label": False}
         comps = []
         for c in data.get("components", []):
             merged = {**comp_defaults, **c}
@@ -535,10 +555,19 @@ class CircuitCanvas(QWidget):
         return c1, r2
 
     def _comp_at(self, col, row) -> Optional[Component]:
-        for c in reversed(self.components):
-            if abs(c.col-col) <= 1 and abs(c.row-row) <= 1:
-                return c
-        return None
+        """
+        Het dichtstbijzijnde component binnen één rastercel. Bij gelijke
+        afstand wint het laatst geplaatste component (dat ligt bovenop).
+        """
+        beste, beste_d = None, None
+        for c in self.components:
+            dc, dr = abs(c.col - col), abs(c.row - row)
+            if dc > 1 or dr > 1:
+                continue
+            d = dc * dc + dr * dr
+            if beste_d is None or d <= beste_d:
+                beste, beste_d = c, d
+        return beste
 
     # ── Muisgebeurtenissen ────────────────────
 
@@ -672,13 +701,16 @@ class CircuitCanvas(QWidget):
         self.update()
 
     def _verwijder(self, col, row):
-        for i, c in enumerate(self.components):
-            if abs(c.col-col) <= 1 and abs(c.row-row) <= 1:
-                if c is self.selected: self.selected = None
-                self.components.pop(i)
-                renumber_contacts(self.components)   # hernummer na verwijderen
-                renumber_auto_labels(self.components)
-                self.update(); return
+        # Gebruik dezelfde keuze als bij het selecteren, anders verwijder je
+        # een ander component dan je aangeklikt hebt.
+        comp = self._comp_at(col, row)
+        if comp is not None:
+            if comp is self.selected:
+                self.selected = None
+            self.components.remove(comp)
+            renumber_contacts(self.components)   # hernummer na verwijderen
+            renumber_auto_labels(self.components)
+            self.update(); return
         for i, w in enumerate(self.wires):
             on_h = w.r1==w.r2==row and min(w.c1,w.c2)<=col<=max(w.c1,w.c2)
             on_v = w.c1==w.c2==col and min(w.r1,w.r2)<=row<=max(w.r1,w.r2)
@@ -688,8 +720,14 @@ class CircuitCanvas(QWidget):
                 self.wires.pop(i); self.update(); return
 
     def _auto_label(self, t):
-        n = sum(1 for c in self.components if c.type == t) + 1
-        return f"{LABEL_PREFIX.get(t, 'X')}{n}"
+        # Per type het eerste vrije nummer, zodat er na een verwijdering of
+        # naast een handmatig label geen dubbel label ontstaat.
+        prefix   = LABEL_PREFIX.get(t, 'X')
+        bestaand = {c.label for c in self.components if c.type == t}
+        n = 1
+        while f"{prefix}{n}" in bestaand:
+            n += 1
+        return f"{prefix}{n}"
 
     def _hernoem_component(self, comp: Component):
         oud_label = comp.label or ""
@@ -711,14 +749,19 @@ class CircuitCanvas(QWidget):
             )
             return
 
-        comp.label = nieuw_label
+        comp.label        = nieuw_label
+        comp.manual_label = True   # niet meer automatisch hernummeren
 
-        if comp.type in (TOOL_RCOIL, TOOL_RCONT, TOOL_RSPDT) and oud_label:
+        # Alleen bij een spoel geldt de hernoeming voor de hele relaisgroep.
+        # Een contact hernoemen is juist de manier om het aan een andere
+        # spoel te koppelen; dan mag de spoel niet meeveranderen.
+        if comp.type == TOOL_RCOIL and oud_label:
             for ander in self.components:
                 if ander is comp:
                     continue
-                if ander.type in (TOOL_RCOIL, TOOL_RCONT, TOOL_RSPDT) and ander.label == oud_label:
-                    ander.label = nieuw_label
+                if ander.type in (TOOL_RCONT, TOOL_RSPDT) and ander.label == oud_label:
+                    ander.label        = nieuw_label
+                    ander.manual_label = True
 
         self.update()
 
@@ -1648,7 +1691,16 @@ class MainWindow(QMainWindow):
         self.kx.setChecked(examen)
         self.zij_stack.setCurrentIndex(0 if bekijk else (1 if bewerk else 2))
 
-        if bewerk:
+        if bekijk:
+            # Zonder deze tak bleef het canvas in de vorige modus staan en
+            # kon de instructeur ongemerkt de schakeling blijven bewerken.
+            self.canvas.set_mode("view")
+            self.stop_sim_knop.setVisible(False)
+            self.storing_knop.setVisible(False)
+            self.gpio_knop.setVisible(False)
+            self.gpio_monitor.setVisible(False)
+            self.canvas.setFocus()
+        elif bewerk:
             self.canvas.set_mode("edit")
             self.stop_sim_knop.setVisible(False)
             self.storing_knop.setVisible(True)

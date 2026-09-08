@@ -30,6 +30,7 @@ class Component:
     gpio_pin:      int = -1
     gpio_dir:      str = "IN"
     defect:        bool = False
+    manual_label:  bool = False
 
 
 @dataclass
@@ -108,12 +109,25 @@ def renumber_auto_labels(components: List["Component"]):
     """
     counters = {}
 
+    # Labels die de gebruiker zelf heeft gezet blijven staan. Hun nummers
+    # worden overgeslagen zodat er geen dubbele labels ontstaan.
+    vast = {}
+    for comp in components:
+        if comp.manual_label and comp.label:
+            vast.setdefault(comp.type, set()).add(comp.label)
+
     for comp in components:
         prefix = LABEL_PREFIX.get(comp.type)
         if not prefix:
             continue
 
+        if comp.manual_label:
+            continue
+
+        bezet  = vast.get(comp.type, set())
         nummer = counters.get(comp.type, 0) + 1
+        while f"{prefix}{nummer}" in bezet:
+            nummer += 1
         counters[comp.type] = nummer
 
         if re.fullmatch(rf"{re.escape(prefix)}\d+", comp.label or ""):

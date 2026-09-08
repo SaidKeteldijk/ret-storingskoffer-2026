@@ -70,12 +70,14 @@ De grafische interface is gebouwd met PyQt5. De schakelingen worden niet als afb
 | `canvas.py` | De tekenlaag (`CircuitCanvas`), de dialoogvensters en het instructeursvenster (`MainWindow`). |
 | `monteur.py` | Het examenscherm voor de monteur (`MonteurCanvas` en `MonteurWindow`). |
 | `display.py` | Bepaalt op welk scherm welk venster terechtkomt. |
+| `schermtest.py` | Diagnose: toont welke schermen Qt ziet en hoe ze verdeeld worden. |
 | `simulator.py` | De elektrische simulatie van de schakeling. |
 | `gpio_manager.py`| De koppeling tussen de simulatie en de GPIO-pinnen. |
 | `models.py` | De dataklassen `Component` en `Wire` en de nummering van de contacten. |
 | `draw.py` | De tekenroutines van de elektrotechnische symbolen. |
 | `constants.py` | Alle constanten, kleuren en gereedschapsdefinities. |
 | `circuits/` | De opgeslagen deelschakelingen als JSON-bestand. |
+| `pcb_tests/` | Losse testscripts per printplaat, onafhankelijk van de app. |
 
 ## Het handmatig starten van de app
 
@@ -246,14 +248,22 @@ De aandachtspunten zijn:
 
 | Bug | Impact | Status |
 |---------------------------------------------------------|-------------------------------|--------|
-| Een defecte motor of lamp onderbreekt het circuit niet | Simulatie wijkt af van praktijk | Open |
+| Een defecte motor of lamp onderbrak het circuit niet | Simulatie week af van de praktijk | Closed |
+| Relaislabels wisselden om bij toevoegen of verwijderen | Schakeling gedroeg zich anders dan getekend | Closed |
+| De Bekijken-modus liet het canvas bewerkbaar | Schakeling kon ongemerkt wijzigen | Closed |
+| Twee componenten konden dezelfde GPIO-pin krijgen | Pin kreeg twee richtingen tegelijk | Closed |
+| Klikken en verwijderen kozen een ander component | Verkeerd symbool verdween | Closed |
+| Beide vensters startten op hetzelfde scherm | Tweeschermopstelling werkte niet | Closed |
 | De MCP23S17 I/O-expanders worden nog niet aangestuurd | Aantal uitgangen beperkt tot 26 | Open |
 | De virtuele omgeving en `__pycache__` staan in de repository | Repository onnodig groot | Open |
 | Het instructeursvenster heeft een minimum van 1400 x 800 | Past niet op kleine schermen | Open |
-| De schermherkenning is nog niet op de Pi geverifieerd | Vensters mogelijk verwisseld | Open |
 | Er zijn vier van de tien deelschakelingen opgenomen | Voldoet nog niet aan F-REQ-1.0 | Open |
 
-De eerste regel verdient een toelichting. Wanneer een lamp of motor als defect wordt ingesteld, wordt deze in de weergave als inactief getoond en blijft de bijbehorende GPIO-uitgang laag, maar in het simulatiemodel blijft de component wel stroom geleiden. Een monteur die de schakeling doormeet, meet daardoor achter een defecte lamp nog steeds spanning. Voor de storingstypen van de schakelaars en de relais is dit wel correct gemodelleerd.
+Twee van de gesloten punten verdienen een toelichting, omdat zij de uitkomst van een examen raakten.
+
+Een defecte lamp of motor bleef in het simulatiemodel stroom geleiden. De component werd wel als inactief getekend en de GPIO-uitgang bleef laag, maar een monteur die de schakeling doormat vond achter een doorgebrande lamp nog steeds spanning. Een defect onderbreekt het circuit nu wel.
+
+Relaislabels werden bij elke toevoeging of verwijdering opnieuw genummerd op volgorde in de lijst. Omdat de koppeling tussen spoel en contact uitsluitend op label werkt, konden twee relaiscontacten daardoor stilzwijgend van spoel wisselen. Labels die de instructeur zelf instelt worden nu vastgelegd met de vlag `manual_label` en niet meer automatisch hernummerd.
 
 # Linux configuratie
 

@@ -154,7 +154,10 @@ class CircuitSimulator:
                     add(pts[0], pts[1])
 
             elif c.type in (TOOL_MOTOR, TOOL_LAMP):
-                add(pts[0], pts[1])
+                # Defect = onderbroken (doorgebrande lamp of wikkeling).
+                # De monteur meet er dan terecht geen spanning meer achter.
+                if not defect:
+                    add(pts[0], pts[1])
 
         label_groups: Dict[str, List[Tuple[int, int]]] = {}
         for c in self.components:
