@@ -73,12 +73,26 @@ python3 test_io_board.py write 0 A 0x0F    # schrijf een byte naar poort A
 python3 test_io_board.py read 0            # lees beide poorten als ingang
 python3 test_io_board.py read 0 --continu  # blijf lezen tot Ctrl-C
 python3 test_io_board.py blink 0 A 3       # knipper alleen GPA3
+python3 test_io_board.py allon 0           # alle 16 pinnen hoog, vasthouden
+python3 test_io_board.py allon --alle      # idem op alle gevonden kaarten
 ```
 
 Begin altijd met `scan`. Worden er geen kaarten gevonden, controleer dan de
 voeding, de RESET-lijn en de DIP-standen voordat je verder zoekt.
 
-> **Voorzichtig:** `walk`, `write` en `blink` zetten de pinnen van de gekozen
+### Uitgangen blijven alleen staan zolang het script draait
+
+Bij het afsluiten zet het script alle pinnen van alle acht adressen terug naar
+ingang. Dat is bewust zo: een testtool mag geen uitgangen laten staan waar
+niemand meer zicht op heeft.
+
+Het gevolg is wel dat `write` geen blijvend effect heeft. Dat commando zet de
+byte weg en sluit meteen daarna af, waardoor de uitgang direct weer wegvalt.
+Gebruik `write` dus alleen samen met een oscilloscoop, en gebruik `allon`,
+`walk` of `blink` wanneer je rustig met een multimeter wilt meten: die blijven
+lopen tot je Ctrl-C geeft.
+
+> **Voorzichtig:** `walk`, `write`, `blink` en `allon` zetten de pinnen van de gekozen
 > kaart als uitgang. Doe dat niet op een kaart waar iets op de ingangen is
 > aangesloten: twee uitgangen die elkaar tegenwerken beschadigen de MCP23S17.
 > Het script zet bij het afsluiten alle pinnen terug naar ingang, ook na Ctrl-C.

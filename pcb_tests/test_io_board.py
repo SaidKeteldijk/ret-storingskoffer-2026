@@ -128,6 +128,11 @@ def main():
     b.add_argument("pin", type=int)
     b.add_argument("--delay", type=float, default=0.5)
 
+    o = sub.add_parser("allon", help="zet alle 16 pinnen hoog en houd ze vast")
+    o.add_argument("addr", type=int, nargs="?", default=None)
+    o.add_argument("--alle", action="store_true",
+                   help="alle gevonden kaarten in plaats van een enkel adres")
+
     a = p.parse_args()
     bus = Bus()
     bus.init_haen()
@@ -181,6 +186,30 @@ def main():
                 time.sleep(a.delay)
                 bus.write(a.addr, olat, 0x00)
                 time.sleep(a.delay)
+
+        elif a.cmd == "allon":
+            if a.alle:
+                doelen = scan(bus)
+            elif a.addr is None:
+                p.error("geef een adres op, of gebruik --alle")
+            else:
+                doelen = [a.addr]
+
+            if not doelen:
+                print("geen kaarten gevonden - er is niets aangezet")
+            else:
+                for addr in doelen:
+                    for poort in ("A", "B"):
+                        zet_uitgang(bus, addr, poort)
+                    bus.write(addr, OLATA, 0xFF)
+                    bus.write(addr, OLATB, 0xFF)
+                lijst = ", ".join(str(x) for x in doelen)
+                print("alle 16 pinnen hoog op kaart " + lijst)
+                # Vasthouden: bij het afsluiten gaan de pinnen terug naar
+                # ingang, dus zonder deze lus valt de uitgang direct weg.
+                print("Ctrl-C om te stoppen")
+                while True:
+                    time.sleep(0.5)
 
     except KeyboardInterrupt:
         print()
