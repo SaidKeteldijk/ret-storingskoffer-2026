@@ -73,6 +73,8 @@ python3 test_io_board.py write 0 A 0x0F    # schrijf een byte naar poort A
 python3 test_io_board.py read 0            # lees beide poorten als ingang
 python3 test_io_board.py read 0 --continu  # blijf lezen tot Ctrl-C
 python3 test_io_board.py blink 0 A 3       # knipper alleen GPA3
+python3 test_io_board.py blink 0 A         # knipper de hele poort A
+python3 test_io_board.py blink 0 AB --delay 2   # alle 16 pinnen, 2 s aan / 2 s uit
 python3 test_io_board.py allon 0           # alle 16 pinnen hoog, vasthouden
 python3 test_io_board.py allon --alle      # idem op alle gevonden kaarten
 ```

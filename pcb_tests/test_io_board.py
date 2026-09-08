@@ -122,11 +122,13 @@ def main():
     r.add_argument("addr", type=int)
     r.add_argument("--continu", action="store_true")
 
-    b = sub.add_parser("blink", help="knipper een pin")
+    b = sub.add_parser("blink", help="knipper een pin, een poort of alle 16")
     b.add_argument("addr", type=int)
-    b.add_argument("poort", choices=["A", "B"])
-    b.add_argument("pin", type=int)
-    b.add_argument("--delay", type=float, default=0.5)
+    b.add_argument("poort", choices=["A", "B", "AB"])
+    b.add_argument("pin", type=int, nargs="?", default=None,
+                   help="pinnummer 0..7; weglaten = de hele poort")
+    b.add_argument("--delay", type=float, default=0.5,
+                   help="seconden aan en seconden uit (standaard 0.5)")
 
     o = sub.add_parser("allon", help="zet alle 16 pinnen hoog en houd ze vast")
     o.add_argument("addr", type=int, nargs="?", default=None)
@@ -178,13 +180,30 @@ def main():
                 time.sleep(0.2)
 
         elif a.cmd == "blink":
-            zet_uitgang(bus, a.addr, a.poort)
-            olat = OLATA if a.poort == "A" else OLATB
+            if a.pin is not None and a.poort == "AB":
+                p.error("geef bij AB geen pinnummer op; dat knippert altijd alle 16")
+            if a.pin is not None and not 0 <= a.pin <= 7:
+                p.error("pin moet tussen 0 en 7 liggen")
+
+            poorten = ["A", "B"] if a.poort == "AB" else [a.poort]
+            # Geen pinnummer = de hele poort, dus alle acht bits hoog.
+            masker = 0xFF if a.pin is None else (1 << a.pin)
+            olat = {"A": OLATA, "B": OLATB}
+
+            for poort in poorten:
+                zet_uitgang(bus, a.addr, poort)
+
+            wat = ("GP" + a.poort + str(a.pin) if a.pin is not None
+                   else "poort " + " en ".join(poorten))
+            print(wat + " knippert: " + str(a.delay) + " s aan, "
+                  + str(a.delay) + " s uit")
             print("Ctrl-C om te stoppen")
             while True:
-                bus.write(a.addr, olat, 1 << a.pin)
+                for poort in poorten:
+                    bus.write(a.addr, olat[poort], masker)
                 time.sleep(a.delay)
-                bus.write(a.addr, olat, 0x00)
+                for poort in poorten:
+                    bus.write(a.addr, olat[poort], 0x00)
                 time.sleep(a.delay)
 
         elif a.cmd == "allon":
