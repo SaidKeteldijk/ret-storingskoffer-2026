@@ -35,8 +35,7 @@ if "QT_QPA_PLATFORM" not in os.environ:
 from PyQt5.QtWidgets import QApplication
 
 from canvas import MainWindow
-from display import (MONTEUR_BREEDTE, MONTEUR_HOOGTE, bepaal_indeling,
-                     huidig_scherm, toon_op)
+from display import MONTEUR_BREEDTE, MONTEUR_HOOGTE, bepaal_indeling, toon_op
 from gpio_manager import gpio_init_startup
 from monteur import MonteurWindow
 
@@ -55,12 +54,10 @@ if __name__ == "__main__":
     monteur.wachtstand()
 
     if indeling.fullscreen:
+        # toon_op controleert zelf waar de vensters terechtkomen, plaatst ze
+        # zo nodig opnieuw en meldt het resultaat.
         toon_op(monteur, indeling.monteur)
         toon_op(instructeur, indeling.instructeur)
-        # Controleer waar de vensters daadwerkelijk zijn beland. Een
-        # compositor mag een plaatsingsverzoek negeren.
-        print(f"[SCHERM] monteur staat op '{huidig_scherm(monteur)}', "
-              f"instructeur op '{huidig_scherm(instructeur)}'")
     else:
         # Ontwikkelmodus: het monteursvenster krijgt exact de afmeting van de
         # Touch Display 2, zodat het inpassen nu al realistisch is.

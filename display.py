@@ -21,6 +21,9 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
+from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QApplication
+
 # Exacte afmeting van de Raspberry Pi Touch Display 2.
 MONTEUR_BREEDTE = 1280
 MONTEUR_HOOGTE  = 720
@@ -105,32 +108,78 @@ def bepaal_indeling(app) -> SchermIndeling:
         f"Instructeur op '{instructeur.name()}', monteur op '{monteur.name()}'.")
 
 
+# Hoe vaak en met welke tussenpoos toon_op controleert of een venster echt op
+# het gevraagde scherm staat. Samen maximaal anderhalve seconde.
+_POGINGEN  = 6
+_WACHTTIJD = 250   # ms
+
+
 def toon_op(venster, scherm):
     """
-    Zet een venster schermvullend op een specifiek scherm.
+    Zet een venster schermvullend op een specifiek scherm en blijf dat
+    controleren tot het er echt staat.
 
-    showFullScreen() kiest het scherm waar het venster op dat moment staat.
-    Een venster dat nog nooit getoond is staat op (0, 0) en belandt daardoor
-    altijd op het primaire scherm, ongeacht de opgegeven geometrie. Daarom
-    wordt het venster hier eerst aangemaakt en verplaatst, en pas daarna
-    schermvullend gemaakt.
+    Een compositor mag een plaatsingsverzoek negeren of pas later uitvoeren.
+    Dat gebeurt bijvoorbeeld als de schermindeling een gat heeft, of nadat er
+    een andere monitor is aangesloten: een nieuw venster begint op (0, 0), en
+    als daar geen scherm staat kiest de compositor er zelf een. Daarom wordt
+    na het plaatsen gecontroleerd waar het venster terecht is gekomen, en
+    wordt het zo nodig opnieuw geplaatst.
     """
-    from PyQt5.QtWidgets import QApplication
+    venster.setGeometry(scherm.geometry())
+    venster.show()                       # nu pas bestaat het native venster
+    _plaats(venster, scherm)
+    _controleer(venster, scherm, poging=1)
 
+
+def _plaats(venster, scherm):
     geo = scherm.geometry()
 
-    venster.setGeometry(geo)
-    venster.show()                       # nu pas bestaat het native venster
+    # Een compositor verplaatst geen venster dat al schermvullend is. Eerst
+    # terug naar normaal, dan verplaatsen, en pas daarna weer schermvullend.
+    if venster.isFullScreen():
+        venster.showNormal()
 
     handle = venster.windowHandle()
     if handle is not None:
         handle.setScreen(scherm)
 
+    venster.setGeometry(geo)
     venster.move(geo.x(), geo.y())
     QApplication.processEvents()         # laat de compositor de verplaatsing verwerken
 
     venster.showFullScreen()
     QApplication.processEvents()
+
+
+def _staat_op(venster, scherm) -> bool:
+    """
+    Staat het venster echt op dit scherm? Twee onafhankelijke controles: het
+    midden van het venster moet binnen het scherm liggen, en Qt moet het
+    venster zelf ook aan dit scherm toekennen.
+    """
+    midden_ok = scherm.geometry().contains(venster.frameGeometry().center())
+    return midden_ok and huidig_scherm(venster) == scherm.name()
+
+
+def _controleer(venster, scherm, poging):
+    def stap():
+        if not venster.isVisible():      # app wordt al afgesloten
+            return
+        naam = venster.windowTitle()
+        if _staat_op(venster, scherm):
+            extra = f" (na {poging} pogingen)" if poging > 1 else ""
+            print(f"[SCHERM] '{naam}' staat op {scherm.name()}{extra}")
+            return
+        if poging >= _POGINGEN:
+            print(f"[SCHERM] LET OP: '{naam}' staat op {huidig_scherm(venster)} "
+                  f"in plaats van {scherm.name()}. Controleer de schermindeling "
+                  "via Voorkeuren > Schermconfiguratie.")
+            return
+        _plaats(venster, scherm)
+        _controleer(venster, scherm, poging + 1)
+
+    QTimer.singleShot(_WACHTTIJD, stap)
 
 
 def huidig_scherm(venster) -> str:
