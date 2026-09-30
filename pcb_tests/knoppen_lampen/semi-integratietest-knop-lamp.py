@@ -4,7 +4,9 @@ semi-integratietest-knop-lamp.py - Knop bedient de bijbehorende lamp.
 RET N.V. | Said Keteldijk (1045604)
 """
 
+import sys
 import time
+
 import spidev
 import RPi.GPIO as GPIO
 
@@ -13,8 +15,11 @@ MODE = "momentary"
 RESET_PIN = 25
 SPI_BUS = 0
 SPI_CS = 0
-MCP_ADDR = 1
+MCP_ADDR = 0
 SPI_SPEED = 1_000_000
+
+if len(sys.argv) > 1:
+    MCP_ADDR = int(sys.argv[1], 0) & 0x07
 
 IDLE = 0xFF
 POLL_INTERVAL = 0.01
@@ -102,6 +107,7 @@ def main():
     mcp = MCP23S17()
     try:
         init_mcp(mcp)
+        print(f"Knoppen en lampen op adres {MCP_ADDR:03b} (CE{SPI_CS}).")
         print(f"Modus: {MODE}. Druk op S1..S8 (Ctrl+C om te stoppen)\n")
 
         previous = 0x00

@@ -119,17 +119,7 @@ kunnen aanstaan; dit script maakt er uitgangen van en zet ze laag.
 
 `knoppen-test.py` meet bij het starten de rusttoestand, met alle knoppen los.
 Een knop telt als ingedrukt zodra zijn pin daarvan afwijkt, dus het script werkt
-zowel voor knoppen naar GND als naar 3V3. Het script leest standaard op adres
-`000`; een ander adres geef je als argument mee, decimaal of binair:
-
-```console
-python3 knoppen_lampen/knoppen-test.py         # adres 000
-python3 knoppen_lampen/knoppen-test.py 1       # adres 001
-python3 knoppen_lampen/knoppen-test.py 0b010   # adres 010
-```
-
-Bij het starten toont het script op welk adres het leest, zodat je kunt
-controleren dat je de juiste kaart aanspreekt.
+zowel voor knoppen naar GND als naar 3V3.
 
 `lampen-test.py` bedien je met `0`..`7` (aan), `u0`..`u7` (uit), `x` (alles uit)
 en `q` (stoppen).
@@ -137,6 +127,22 @@ en `q` (stoppen).
 `semi-integratietest-knop-lamp.py` koppelt S*n* aan Q*n*. Met
 `MODE = "momentary"` brandt de lamp zolang de knop ingedrukt is, met
 `MODE = "toggle"` schakelt elke druk de lamp om.
+
+### Het adres van de kaart
+
+`knoppen-test.py`, `lampen-test.py` en `semi-integratietest-knop-lamp.py` werken
+standaard op adres `000`, het adres van de knoppen- en lampenprint. Een ander
+adres geef je als argument mee, decimaal of binair:
+
+```console
+python3 knoppen_lampen/lampen-test.py          # adres 000
+python3 knoppen_lampen/lampen-test.py 1        # adres 001
+python3 knoppen_lampen/lampen-test.py 0b010    # adres 010
+```
+
+Elk van deze drie scripts toont bij het starten op welk adres het werkt, zodat je
+kunt controleren dat je de juiste kaart aanspreekt. `lightsout.py` staat vast op
+adres `000`.
 
 ## digitaal/ - de 48V-uitgangskaarten
 

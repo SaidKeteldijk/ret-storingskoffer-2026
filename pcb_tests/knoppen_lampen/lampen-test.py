@@ -4,15 +4,20 @@ lampen-test.py - Lampen Q1..Q8 los aansturen.
 RET N.V. | Said Keteldijk (1045604)
 """
 
+import sys
 import time
+
 import spidev
 import RPi.GPIO as GPIO
 
 RESET_PIN = 25
 SPI_BUS = 0
 SPI_CS = 0
-MCP_ADDR = 1
+MCP_ADDR = 0
 SPI_SPEED = 1_000_000
+
+if len(sys.argv) > 1:
+    MCP_ADDR = int(sys.argv[1], 0) & 0x07
 
 IODIRB = 0x01
 IOCON = 0x0A
@@ -74,6 +79,7 @@ def main():
     try:
         init_lamps(mcp)
         state = 0x00
+        print(f"Lampen aansturen op adres {MCP_ADDR:03b} (CE{SPI_CS}).")
         print("Alle lampen uit. Typ 0-7 = aan, u0-u7 = uit, x = alles uit, q = stoppen")
         show_status(state)
 
