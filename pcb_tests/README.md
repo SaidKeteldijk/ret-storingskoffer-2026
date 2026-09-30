@@ -119,7 +119,17 @@ kunnen aanstaan; dit script maakt er uitgangen van en zet ze laag.
 
 `knoppen-test.py` meet bij het starten de rusttoestand, met alle knoppen los.
 Een knop telt als ingedrukt zodra zijn pin daarvan afwijkt, dus het script werkt
-zowel voor knoppen naar GND als naar 3V3.
+zowel voor knoppen naar GND als naar 3V3. Het script leest standaard op adres
+`000`; een ander adres geef je als argument mee, decimaal of binair:
+
+```console
+python3 knoppen_lampen/knoppen-test.py         # adres 000
+python3 knoppen_lampen/knoppen-test.py 1       # adres 001
+python3 knoppen_lampen/knoppen-test.py 0b010   # adres 010
+```
+
+Bij het starten toont het script op welk adres het leest, zodat je kunt
+controleren dat je de juiste kaart aanspreekt.
 
 `lampen-test.py` bedien je met `0`..`7` (aan), `u0`..`u7` (uit), `x` (alles uit)
 en `q` (stoppen).

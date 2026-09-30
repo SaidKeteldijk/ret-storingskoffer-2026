@@ -4,15 +4,20 @@ knoppen-test.py - Knoppen S1..S8 uitlezen.
 RET N.V. | Said Keteldijk (1045604)
 """
 
+import sys
 import time
+
 import spidev
 import RPi.GPIO as GPIO
 
 RESET_PIN = 25
 SPI_BUS = 0
 SPI_CS = 0
-MCP_ADDR = 1
+MCP_ADDR = 0
 SPI_SPEED = 1_000_000
+
+if len(sys.argv) > 1:
+    MCP_ADDR = int(sys.argv[1], 0) & 0x07
 
 USE_PULLUP = False
 POLL_INTERVAL = 0.01
@@ -95,6 +100,7 @@ def main():
     try:
         init_buttons(mcp)
 
+        print(f"Knoppen uitlezen op adres {MCP_ADDR:03b} (CE{SPI_CS}).")
         print("Laat alle knoppen los, rusttoestand wordt gemeten...")
         time.sleep(0.5)
         idle = read_stable(mcp)
