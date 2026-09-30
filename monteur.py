@@ -1,10 +1,6 @@
 """
 monteur.py – Examenscherm voor de monteur (Raspberry Pi Touch Display 2).
 RET N.V. | Said Keteldijk (1045604)
-
-Toont uitsluitend de schakeling die de instructeur heeft klaargezet, plus de
-resterende examentijd. Bewust géén menu, géén stroomweergave en géén
-storingsmarkering: het is een statische tekening, zoals op papier.
 """
 
 import copy

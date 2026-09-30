@@ -1,20 +1,6 @@
 """
-display.py – Bepaalt op welk scherm het instructeurs- en monteursvenster komen.
+display.py – Verdeelt het instructeurs- en monteursvenster over de schermen.
 RET N.V. | Said Keteldijk (1045604)
-
-Twee schermen (Raspberry Pi):
-    Instructeur -> HDMI0              volledig dashboard
-    Monteur     -> DSI / Touch 2      statische schakeling + examentijd
-
-Eén scherm (laptop tijdens ontwikkeling):
-    Beide vensters op hetzelfde scherm; het monteursvenster krijgt exact
-    1280x720 zodat je meteen tegen de echte afmeting van de Touch Display 2
-    ontwikkelt in plaats van het inpasprobleem pas op de Pi te ontdekken.
-
-Omgevingsvariabelen – noodrem als de automatische detectie verkeerd kiest:
-    STORINGSKOFFER_LAYOUT       auto (standaard) | dev | pi
-    STORINGSKOFFER_MONTEUR      schermnaam of index, bv. "DSI-1" of "1"
-    STORINGSKOFFER_INSTRUCTEUR  schermnaam of index
 """
 
 import os
@@ -108,8 +94,7 @@ def bepaal_indeling(app) -> SchermIndeling:
         f"Instructeur op '{instructeur.name()}', monteur op '{monteur.name()}'.")
 
 
-# Hoe vaak en met welke tussenpoos toon_op controleert of een venster echt op
-# het gevraagde scherm staat. Samen maximaal anderhalve seconde.
+# Controles van toon_op: samen maximaal anderhalve seconde.
 _POGINGEN  = 6
 _WACHTTIJD = 250   # ms
 
@@ -135,8 +120,7 @@ def toon_op(venster, scherm):
 def _plaats(venster, scherm):
     geo = scherm.geometry()
 
-    # Een compositor verplaatst geen venster dat al schermvullend is. Eerst
-    # terug naar normaal, dan verplaatsen, en pas daarna weer schermvullend.
+    # Een compositor verplaatst geen venster dat al schermvullend is.
     if venster.isFullScreen():
         venster.showNormal()
 

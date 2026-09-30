@@ -1,20 +1,6 @@
 """
 main.py - Opstartpunt Storingskoffer Dashboard.
 RET N.V. | Said Keteldijk (1045604)
-
-Windows: python main.py
-Raspberry Pi: python3 main.py
-
-Twee vensters:
-  Instructeur (HDMI0)      – volledig dashboard: ontwerpen, storing, examen
-  Monteur (Touch Display 2) – statische schakeling + examentijd
-
-Op één scherm (laptop) komen beide vensters naast elkaar; zie display.py
-voor de omgevingsvariabelen waarmee je die indeling kunt forceren.
-
-Installatie:
-  pip install PyQt5
-  pip install RPi.GPIO   (alleen op Raspberry Pi)
 """
 
 import os
@@ -41,7 +27,7 @@ from monteur import MonteurWindow
 
 
 if __name__ == "__main__":
-    gpio_init_startup()  # alle pins -> OUTPUT LOW
+    gpio_init_startup()
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
 
@@ -54,13 +40,10 @@ if __name__ == "__main__":
     monteur.wachtstand()
 
     if indeling.fullscreen:
-        # toon_op controleert zelf waar de vensters terechtkomen, plaatst ze
-        # zo nodig opnieuw en meldt het resultaat.
         toon_op(monteur, indeling.monteur)
         toon_op(instructeur, indeling.instructeur)
     else:
-        # Ontwikkelmodus: het monteursvenster krijgt exact de afmeting van de
-        # Touch Display 2, zodat het inpassen nu al realistisch is.
+        # Ontwikkelmodus: monteursvenster op de echte afmeting van de Touch Display 2.
         beschikbaar = app.primaryScreen().availableGeometry()
         instructeur.showMaximized()
         monteur.setGeometry(

@@ -154,8 +154,7 @@ class CircuitSimulator:
                     add(pts[0], pts[1])
 
             elif c.type in (TOOL_MOTOR, TOOL_LAMP):
-                # Defect = onderbroken (doorgebrande lamp of wikkeling).
-                # De monteur meet er dan terecht geen spanning meer achter.
+                # Defect = onderbroken, zoals een doorgebrande lamp of wikkeling.
                 if not defect:
                     add(pts[0], pts[1])
 

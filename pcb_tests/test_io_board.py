@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
 """
-Testtool voor de MCP23S17 I/O-kaarten van de storingskoffer.
-
-Bus:  SCK=pin23, SI=pin19, SO=pin21, CS=pin24 (CE0), RESET=pin22 (GPIO25),
-      INT-NET=pin18 (GPIO24), 3V3=pin17, GND=pin20.
-
-Gebruik:
-    python test_io_board.py scan
-    python test_io_board.py walk 0            # loopt 1 bit langs A0..A7, B0..B7
-    python test_io_board.py write 0 A 0x0F
-    python test_io_board.py read 0
-    python test_io_board.py blink 0 A 3       # knippert alleen GPA3
-
-Voorzichtig: 'walk' en 'write' zetten de pinnen van die kaart als uitgang.
-Doe dat niet op een kaart waar iets op de ingangen is aangesloten.
+test_io_board.py - Ouder testgereedschap voor de MCP23S17 I/O-kaarten.
+RET N.V. | Said Keteldijk (1045604)
 """
 
 import argparse
@@ -22,7 +10,6 @@ import time
 import spidev
 from gpiozero import DigitalOutputDevice
 
-# --- registers (BANK = 0) ---------------------------------------------------
 IODIRA, IODIRB = 0x00, 0x01
 IPOLA = 0x02
 GPINTENA = 0x04
@@ -33,10 +20,9 @@ GPPUA, GPPUB = 0x0C, 0x0D
 GPIOA, GPIOB = 0x12, 0x13
 OLATA, OLATB = 0x14, 0x15
 
-# --- IOCON-bits -------------------------------------------------------------
-IOCON_MIRROR = 0x40   # INTA en INTB samenvoegen
-IOCON_HAEN = 0x08     # hardware-adressering aan
-IOCON_ODR = 0x04      # INT open-drain, nodig voor de gedeelde INT-NET
+IOCON_MIRROR = 0x40
+IOCON_HAEN = 0x08
+IOCON_ODR = 0x04
 
 RESET_PIN = 25
 SPI_HZ = 1_000_000
@@ -47,10 +33,10 @@ class Bus:
         self.spi = spidev.SpiDev()
         self.spi.open(bus, device)
         self.spi.max_speed_hz = hz
-        self.spi.mode = 0                      # MCP23S17 werkt in mode 0
+        self.spi.mode = 0
         self.reset = DigitalOutputDevice(RESET_PIN, initial_value=False)
         time.sleep(0.001)
-        self.reset.on()                        # RESET is actief-laag
+        self.reset.on()
         time.sleep(0.001)
 
     def write(self, addr, reg, value):
@@ -93,13 +79,13 @@ def zet_uitgang(bus, addr, poort):
     reg = IODIRA if poort == "A" else IODIRB
     olat = OLATA if poort == "A" else OLATB
     bus.write(addr, olat, 0x00)
-    bus.write(addr, reg, 0x00)          # 0 = uitgang
+    bus.write(addr, reg, 0x00)
 
 
 def zet_ingang(bus, addr, poort, pullup=True):
     iodir = IODIRA if poort == "A" else IODIRB
     gppu = GPPUA if poort == "A" else GPPUB
-    bus.write(addr, iodir, 0xFF)        # 1 = ingang
+    bus.write(addr, iodir, 0xFF)
     bus.write(addr, gppu, 0xFF if pullup else 0x00)
 
 
@@ -186,7 +172,6 @@ def main():
                 p.error("pin moet tussen 0 en 7 liggen")
 
             poorten = ["A", "B"] if a.poort == "AB" else [a.poort]
-            # Geen pinnummer = de hele poort, dus alle acht bits hoog.
             masker = 0xFF if a.pin is None else (1 << a.pin)
             olat = {"A": OLATA, "B": OLATB}
 
@@ -224,8 +209,6 @@ def main():
                     bus.write(addr, OLATB, 0xFF)
                 lijst = ", ".join(str(x) for x in doelen)
                 print("alle 16 pinnen hoog op kaart " + lijst)
-                # Vasthouden: bij het afsluiten gaan de pinnen terug naar
-                # ingang, dus zonder deze lus valt de uitgang direct weg.
                 print("Ctrl-C om te stoppen")
                 while True:
                     time.sleep(0.5)
@@ -234,7 +217,7 @@ def main():
         print()
     finally:
         for addr in range(8):
-            bus.write(addr, IODIRA, 0xFF)     # alles terug naar ingang
+            bus.write(addr, IODIRA, 0xFF)
             bus.write(addr, IODIRB, 0xFF)
         bus.close()
 

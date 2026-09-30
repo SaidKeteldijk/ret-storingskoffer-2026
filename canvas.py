@@ -356,8 +356,7 @@ class CircuitCanvas(QWidget):
         self.exam_seconds_left  = 0       # resterende seconden (door MainWindow beheerd)
         self.exam_total_seconds = 0       # totale examenduur in seconden
 
-        # GPIO – het monteursscherm is een statische weergave en krijgt geen
-        # eigen manager: twee managers op dezelfde pinnen botsen.
+        # Twee managers op dezelfde pinnen botsen; het monteursscherm krijgt er geen.
         self.gpio_mgr = GPIOManager() if gpio else None
         self._gpio_timer = QTimer(self)
         self._gpio_timer.setInterval(50)
@@ -720,8 +719,7 @@ class CircuitCanvas(QWidget):
                 self.wires.pop(i); self.update(); return
 
     def _auto_label(self, t):
-        # Per type het eerste vrije nummer, zodat er na een verwijdering of
-        # naast een handmatig label geen dubbel label ontstaat.
+        # Eerste vrije nummer per type, zodat er geen dubbel label ontstaat.
         prefix   = LABEL_PREFIX.get(t, 'X')
         bestaand = {c.label for c in self.components if c.type == t}
         n = 1
@@ -1646,9 +1644,7 @@ class MainWindow(QMainWindow):
 
         hoofd.addWidget(zij); hoofd.addWidget(rechts)
 
-        # Monteursvenster op het tweede scherm (door main.py gekoppeld).
-        # Blijft None als de app op één scherm zonder examenweergave draait.
-        self.monteur = None
+        self.monteur = None   # monteursvenster, door main.py gekoppeld
 
         # Examentimer (MainWindow beheert de countdown)
         self._exam_timer = QTimer(self)
@@ -1692,8 +1688,6 @@ class MainWindow(QMainWindow):
         self.zij_stack.setCurrentIndex(0 if bekijk else (1 if bewerk else 2))
 
         if bekijk:
-            # Zonder deze tak bleef het canvas in de vorige modus staan en
-            # kon de instructeur ongemerkt de schakeling blijven bewerken.
             self.canvas.set_mode("view")
             self.stop_sim_knop.setVisible(False)
             self.storing_knop.setVisible(False)

@@ -1,12 +1,6 @@
 """
 schermtest.py – Controleert de schermopstelling vóór het starten van de app.
 RET N.V. | Said Keteldijk (1045604)
-
-Gebruik op de Raspberry Pi:
-    source venv-rpi/bin/activate
-    python3 schermtest.py
-
-Toont welke schermen Qt ziet en hoe display.py de vensters zou verdelen.
 """
 
 import os

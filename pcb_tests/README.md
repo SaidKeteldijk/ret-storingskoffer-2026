@@ -9,9 +9,45 @@ De scripts zijn bewust losgekoppeld van de app. Zij importeren niets uit
 `canvas.py`, `simulator.py` of `gpio_manager.py`, zodat een printplaat ook
 getest kan worden als de app zelf nog niet werkt.
 
-| Script | Deelsysteem | Test |
-|-----------------------|-------------|------------------------------------------|
-| `test_io_board.py` | 6 | MCP23S17 I/O-kaarten via de SPI-bus |
+## Indeling
+
+Elke unit heeft een eigen map. Wat voor alle kaarten samen geldt, staat in de
+hoofdmap van `pcb_tests`.
+
+| Map | Unit | Deelsysteem |
+|-------------------|------------------------------------|-------------|
+| `knoppen_lampen/` | De knoppen- en lampenprint | 6 |
+| `digitaal/` | De vier digitale 48V-uitgangskaarten | 6 |
+| `analoog/` | De DAC-print | 7 |
+| hoofdmap | Geldt voor alle kaarten op de bus | - |
+
+| Map | Script | Test |
+|-------------------|------------------------------------|--------------------------------------------------|
+| hoofdmap | `scan.py` | Zoekt MCP23S17's op CE0, adres 0 t/m 7 |
+| hoofdmap | `test_io_board.py` | Ouder testgereedschap, zie waarschuwing hieronder |
+| `knoppen_lampen/` | `lightsout.py` | Zet de lampen op de knoppen/lampen-PCB uit |
+| `knoppen_lampen/` | `lampen-test.py` | Lampen Q1..Q8 los aansturen |
+| `knoppen_lampen/` | `knoppen-test.py` | Knoppen S1..S8 uitlezen |
+| `knoppen_lampen/` | `semi-integratietest-knop-lamp.py` | Knop bedient de bijbehorende lamp |
+| `digitaal/` | `digital.py` | De vier 48V-uitgangskaarten per pin bedienen |
+| `analoog/` | `dac-tester.py` | De twee DAC8564's: 4-20 mA en 0-48 V |
+
+De scripts staan los van elkaar en importeren niets uit een andere map, dus je
+kunt ze vanuit `pcb_tests` aanroepen of eerst naar de map toe gaan:
+
+```console
+python3 knoppen_lampen/lampen-test.py
+cd digitaal && python3 digital.py
+```
+
+Begin altijd met `scan.py`. Dat script raakt geen uitgangen aan en laat zien
+welke kaarten de bus ziet en op welk adres.
+
+> **Waarschuwing bij `test_io_board.py`:** dit script doet bij elke aanroep een
+> hardware-reset en zet bij het afsluiten alle acht adressen terug naar ingang.
+> De RESET-lijn is gedeeld met alle vijf de MCP23S17's, en zwevende ingangen
+> laten de 48V-uitgangen aanslaan. Het is geschreven toen er nog één losse
+> kaart was. Gebruik voor de opgebouwde koffer `scan.py` en `digital.py`.
 
 ## Voorbereiding
 
@@ -28,7 +64,7 @@ of het apparaat bestaat:
 ls /dev/spidev0.*
 ```
 
-De scripts hebben twee bibliotheken nodig die de app zelf niet gebruikt:
+De scripts hebben bibliotheken nodig die de app zelf niet gebruikt:
 
 ```console
 sudo apt install python3-spidev python3-gpiozero
@@ -42,6 +78,117 @@ omgeving zelf:
 source ../venv-rpi/bin/activate
 pip install spidev gpiozero
 ```
+
+## scan.py
+
+Zoekt op CE0 naar MCP23S17's op hardware-adres 0 tot en met 7. Werkwijze:
+
+1. Hardware-reset via de RESET-pin. Zet `RESET_PIN = None` als RESET vast aan
+   3V3 hangt, of wanneer je de andere kaarten niet wilt verstoren: de RESET-lijn
+   is gedeeld.
+2. Het HAEN-bit in IOCON aanzetten, zodat elke chip naar zijn adrespinnen gaat
+   luisteren. Direct na een reset staat HAEN uit en reageert elke chip op elk
+   adres, dus die ene schrijfactie bereikt de hele keten.
+3. Per adres twee testpatronen (0xA5 en 0x5A) naar IPOLA schrijven en
+   teruglezen. Twee patronen in plaats van een, omdat een zwevende of
+   kortgesloten MISO-lijn altijd 0x00 of 0xFF teruggeeft en anders een
+   vals-positief zou opleveren.
+4. IPOLA weer op de oorspronkelijke waarde zetten.
+
+Het script raakt geen enkele uitgang aan.
+
+## knoppen_lampen/ - de knoppen- en lampenprint
+
+MCP23S17 op CE0, hardware-adres `000`.
+
+| Poort | Signaal | Richting | Werking |
+|------------|------------------|----------|-----------------------------------------|
+| GPA0..GPA7 | S1..S8, knoppen | ingang | actief laag, externe pull-up R20 (10 k) |
+| GPB0..GPB7 | Q1..Q8, lampen | uitgang | niet geinverteerd: pin hoog = lamp aan |
+
+De lampen hangen via een 2N7002 aan 12 V. Interne pull-ups zijn niet nodig, R20
+doet dat al; daarom staat `USE_PULLUP = False`.
+
+Bij het instellen wordt eerst de latch laag gezet en pas daarna de richting op
+uitgang. Andersom flitst elke lamp kort aan op het moment van omschakelen.
+
+`lightsout.py` doet bewust **geen** hardware-reset: de RESET-lijn is gedeeld met
+de andere kaarten op CE0 en zou hun uitgangen ook wissen. Na het opstarten van
+de Pi staan de pinnen als ingang en zweven de MOSFET-gates, waardoor lampen
+kunnen aanstaan; dit script maakt er uitgangen van en zet ze laag.
+
+`knoppen-test.py` meet bij het starten de rusttoestand, met alle knoppen los.
+Een knop telt als ingedrukt zodra zijn pin daarvan afwijkt, dus het script werkt
+zowel voor knoppen naar GND als naar 3V3.
+
+`lampen-test.py` bedien je met `0`..`7` (aan), `u0`..`u7` (uit), `x` (alles uit)
+en `q` (stoppen).
+
+`semi-integratietest-knop-lamp.py` koppelt S*n* aan Q*n*. Met
+`MODE = "momentary"` brandt de lamp zolang de knop ingedrukt is, met
+`MODE = "toggle"` schakelt elke druk de lamp om.
+
+## digitaal/ - de 48V-uitgangskaarten
+
+Vier MCP23S17's op CE0, hardware-adres `001` tot en met `100`. Adres `000` is de
+knoppen/lampenprint en wordt door `digital.py` niet aangeraakt.
+
+Pinnummering: 0 tot en met 15, waarbij 0-7 = GPIOA0-7 en 8-15 = GPIOB0-7.
+PCB-adressen geef je binair op, net als in de scan: `010` is adres 2.
+
+`digital.py` gaat uit van een geinverteerde open-drain levelshifter:
+
+| MCP-pin | Uitgang |
+|-----------|----------------|
+| 1 (3,3 V) | 0 V, inactief |
+| 0 (0 V) | 48 V, actief |
+
+Die inversie wordt verborgen: `set_hoog()` zet de uitgang op 48 V.
+
+> **Let op:** deze polariteit is nog niet definitief. Uit de metingen aan de
+> kaarten kwam de omgekeerde conclusie (latch 1 = 48 V). Controleer dit voordat
+> je het script op een opgebouwde koffer gebruikt: bij de verkeerde aanname zet
+> `init_als_output()` juist alle 64 uitgangen op 48 V in plaats van uit.
+
+Commando's: `<pcb> <pin> hoog`, `<pcb> <pin> laag`, `status`, `uit`, `help`,
+`exit`.
+
+## analoog/ - de DAC-print
+
+Twee DAC8564's op CE1 (GPIO7, fysieke pin 26, naar !SYNC). De DAC8564 heeft geen
+data-uitgang, dus MISO blijft ongebruikt en de bus draait in SPI-mode 1.
+
+| DAC | Adres | Keten | Bereik |
+|-----|-------|--------------------------|-------------|
+| U1 | 00 | XTR117 stroomlus | 4 tot 20 mA |
+| U3 | 01 | MCP6002 + 2N7002 booster | 0 tot 48 V |
+
+**XTR117.** R3 van 10 k tussen VOUT en IIN, stroomversterking 100x:
+
+```
+IIN  = V_dac / 10k
+Iuit = 100 x IIN   ->   Iuit [mA] = 10 x V_dac
+4 mA bij 0,40 V DAC, 20 mA bij 2,00 V DAC
+```
+
+**Booster.** De DAC gaat naar de min-ingang, de deler R18 (1,82 M) / R19 (100 k)
+vanaf VOUT3 naar de plus-ingang. De 2N7002 keert om, dus de lus is negatief
+teruggekoppeld en regelt tot V+ = V-:
+
+```
+V_dac = Vuit x 100k / 1,92M   ->   Vuit = 19,2 x V_dac
+48 V bij 2,50 V DAC
+```
+
+Beide schakelingen gebruiken maar een deel van het DAC-bereik. Per uitgang staat
+daarom een harde begrenzing (`v_max`), zodat een typefout de XTR117 niet in
+overstroom drijft.
+
+> **Openstaand:** `VFS` staat op 2,5 terwijl de afleiding uitgaat van een volle
+> schaal van 5,0 V. Dat hangt samen met de meting waarbij DAC 2 de halve
+> spanning gaf. Meet VOUTA van U3: 1,25 V betekent dat `VFS = 2.5` klopt,
+> 2,50 V betekent dat de fout in de booster zit en dat `scale` en R18 nagerekend
+> moeten worden.
 
 ## test_io_board.py
 

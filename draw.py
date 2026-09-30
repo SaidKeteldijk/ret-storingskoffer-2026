@@ -2,10 +2,8 @@
 draw.py - Tekenfuncties voor alle elektrotechnische symbolen.
 RET N.V. | Said Keteldijk (1045604)
 
-Alle functies tekenen gecentreerd op (0,0). QPainter.translate/rotate
-wordt door de canvas toegepast voor aanroep.
-  HW   = 20px  halfbreedte symbool-body
-  CONN = 40px  aansluitpunt op rasterpunt
+Alle functies tekenen gecentreerd op (0,0); de canvas past translate en
+rotate toe voor de aanroep.
 """
 
 from PyQt5.QtGui import QBrush, QColor, QFont, QPainter, QPen
