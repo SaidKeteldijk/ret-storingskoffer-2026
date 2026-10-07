@@ -110,6 +110,13 @@ TOOL_LABELS = {
     TOOL_DELETE: "Verwijder",
 }
 
+LABEL_GROEP = {
+    TOOL_SWITCH:  "schakelaars",
+    TOOL_SW2P_NO: "schakelaars",
+    TOOL_SW2P_NC: "schakelaars",
+    TOOL_SPDT:    "schakelaars",
+}
+
 LABEL_PREFIX = {
     TOOL_SWITCH: "S",
     TOOL_SW2P_NO: "S",

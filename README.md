@@ -146,7 +146,7 @@ In de Bewerken-modus zijn de volgende componenten beschikbaar:
 | Voeding (+V) | +V | 0 |
 | Massa (GND) | GND | 0 |
 
-Componenten met hetzelfde label worden automatisch aan elkaar gekoppeld. Een relaiscontact met label `K1` volgt dus de relaisspoel met label `K1`. Net Labels met dezelfde naam worden in de simulatie als één knooppunt behandeld, zodat een schakeling over meerdere bladen verdeeld kan worden zonder dat er een draad tussen getekend hoeft te worden.
+Componenten met hetzelfde label worden automatisch aan elkaar gekoppeld. Een relaiscontact met label `K1` volgt dus de relaisspoel met label `K1`. De automatische nummering loopt per labelgroep door: alle soorten schakelaars tellen samen op als `S1`, `S2`, `S3`, ongeacht of het een eenpolige, tweepolige of wisselschakelaar is. Relaisspoelen en relaiscontacten houden juist een eigen telling, zodat spoel `K1` en contact `K1` standaard bij elkaar horen. Een label dat je zelf instelt wordt niet meer hernummerd en houdt zijn nummer bezet. Net Labels met dezelfde naam worden in de simulatie als één knooppunt behandeld, zodat een schakeling over meerdere bladen verdeeld kan worden zonder dat er een draad tussen getekend hoeft te worden.
 
 ## Het scherm van de monteur
 

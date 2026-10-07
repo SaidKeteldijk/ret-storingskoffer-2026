@@ -12,6 +12,7 @@ from constants import (
     CONN,
     CONTACTS_PER_TYPE,
     FOUR_TERMINAL,
+    LABEL_GROEP,
     LABEL_PREFIX,
     SINGLE_TERMINAL,
     THREE_TERMINAL,
@@ -103,6 +104,15 @@ def can_use_contact_start(components: List["Component"], target: "Component", st
     return True
 
 
+def label_groep(comp_type: str) -> str:
+    """
+    Componenttypes in dezelfde groep delen één doorlopende nummering. Alle
+    soorten schakelaars tellen daardoor samen door: S1, S2, S3, ongeacht of
+    het een eenpolige, tweepolige of wisselschakelaar is.
+    """
+    return LABEL_GROEP.get(comp_type, comp_type)
+
+
 def renumber_auto_labels(components: List["Component"]):
     """
     Hernummer alleen standaard auto-labels zoals S1/K2/H3.
@@ -115,7 +125,7 @@ def renumber_auto_labels(components: List["Component"]):
     vast = {}
     for comp in components:
         if comp.manual_label and comp.label:
-            vast.setdefault(comp.type, set()).add(comp.label)
+            vast.setdefault(label_groep(comp.type), set()).add(comp.label)
 
     for comp in components:
         prefix = LABEL_PREFIX.get(comp.type)
@@ -125,11 +135,12 @@ def renumber_auto_labels(components: List["Component"]):
         if comp.manual_label:
             continue
 
-        bezet  = vast.get(comp.type, set())
-        nummer = counters.get(comp.type, 0) + 1
+        groep  = label_groep(comp.type)
+        bezet  = vast.get(groep, set())
+        nummer = counters.get(groep, 0) + 1
         while f"{prefix}{nummer}" in bezet:
             nummer += 1
-        counters[comp.type] = nummer
+        counters[groep] = nummer
 
         if re.fullmatch(rf"{re.escape(prefix)}\d+", comp.label or ""):
             comp.label = f"{prefix}{nummer}"

@@ -22,7 +22,7 @@ from PyQt5.QtCore import Qt, QPoint, QTimer
 
 from constants import *
 from models    import (
-    Component, Wire, can_use_contact_start, comp_connections,
+    Component, Wire, can_use_contact_start, comp_connections, label_groep,
     renumber_auto_labels, renumber_contacts,
 )
 from draw      import (EC_DRAW_BASE, _ec_schakelaar, _ec_schakelaar2p, _ec_spdt, _ec_rspdt, _ec_netlabel,
@@ -733,9 +733,12 @@ class CircuitCanvas(QWidget):
                 self.wires.pop(i); self.update(); return
 
     def _auto_label(self, t):
-        # Eerste vrije nummer per type, zodat er geen dubbel label ontstaat.
+        # Eerste vrije nummer binnen de labelgroep, zodat alle schakelaars
+        # samen doortellen en er geen dubbel label ontstaat.
         prefix   = LABEL_PREFIX.get(t, 'X')
-        bestaand = {c.label for c in self.components if c.type == t}
+        groep    = label_groep(t)
+        bestaand = {c.label for c in self.components
+                    if label_groep(c.type) == groep}
         n = 1
         while f"{prefix}{n}" in bestaand:
             n += 1
