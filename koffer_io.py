@@ -6,6 +6,7 @@ RET N.V. | Said Keteldijk (1045604)
 from typing import Dict
 
 MCP_ADDR = 0b000
+RESET_PIN = 25
 SPI_BUS = 0
 SPI_CS = 0
 SPI_SPEED = 1_000_000
@@ -18,6 +19,8 @@ GPIOA = 0x12
 OLATB = 0x15
 HAEN = 0x08
 
+from gpio_manager import GPIO, ON_RPI
+
 try:
     import spidev
     SPI_AANWEZIG = True
@@ -25,6 +28,24 @@ try:
 except ImportError:
     SPI_AANWEZIG = False
     print("[KOFFER] spidev niet gevonden - MockKoffer actief (Windows/Mac)")
+
+
+def reset_vrijgeven():
+    """
+    Zet de RESET-lijn hoog, zonder puls. De lijn is gedeeld met de digitale
+    48V-kaarten; een puls zou hun uitgangen laten zweven en aanslaan.
+    """
+    if not ON_RPI:
+        return True
+    try:
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(RESET_PIN, GPIO.OUT, initial=GPIO.HIGH)
+        GPIO.output(RESET_PIN, GPIO.HIGH)
+        return True
+    except Exception as e:
+        print(f"[KOFFER] RESET-lijn hoog zetten mislukt: {e}")
+        return False
 
 
 def kanaal_index(kanaal: str) -> int:
@@ -86,6 +107,7 @@ class KofferIO:
     def init(self) -> bool:
         """Zet de print klaar. Geeft True terug als dat gelukt is."""
         self.fout = ""
+        reset_vrijgeven()
         if SPI_AANWEZIG:
             try:
                 self.spi = spidev.SpiDev()
