@@ -11,6 +11,7 @@ SPI_CS = 0
 SPI_SPEED = 1_000_000
 
 IODIRA, IODIRB = 0x00, 0x01
+IPOLA = 0x02
 IOCON = 0x0A
 GPPUA = 0x0C
 GPIOA = 0x12
@@ -62,12 +63,14 @@ class KofferIO:
         self.fout = ""
         self._lampen = 0x00
         self._mock_knoppen = 0xFF
+        self._mock_regs = {}
 
     def _opcode(self, lezen: bool) -> int:
         return 0x40 | ((MCP_ADDR & 0x07) << 1) | (1 if lezen else 0)
 
     def _schrijf(self, register: int, waarde: int):
         if self.spi is None:
+            self._mock_regs[register] = waarde & 0xFF
             if register == OLATB:
                 self._lampen = waarde & 0xFF
             return
@@ -77,11 +80,7 @@ class KofferIO:
         if self.spi is None:
             if register == GPIOA:
                 return self._mock_knoppen
-            if register == OLATB:
-                return self._lampen
-            if register == IODIRB:
-                return 0x00
-            return 0xFF
+            return self._mock_regs.get(register, 0x00)
         return self.spi.xfer2([self._opcode(True), register, 0x00])[2]
 
     def init(self) -> bool:
@@ -101,6 +100,18 @@ class KofferIO:
                 return False
 
         self._schrijf(IOCON, HAEN)
+
+        for patroon in (0xA5, 0x5A):
+            self._schrijf(IPOLA, patroon)
+            if self._lees(IPOLA) != patroon:
+                self.actief = False
+                self.fout = ("geen antwoord van de print op adres 000. "
+                             "Controleer de SPI-bedrading, de voeding en of "
+                             "de RESET-lijn hoog staat.")
+                print(f"[KOFFER] {self.fout}")
+                return False
+        self._schrijf(IPOLA, 0x00)
+
         self._schrijf(OLATB, 0x00)
         self._schrijf(IODIRB, 0x00)
         self._schrijf(IODIRA, 0xFF)

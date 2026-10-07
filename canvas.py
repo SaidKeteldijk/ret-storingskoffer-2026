@@ -1751,10 +1751,16 @@ class MainWindow(QMainWindow):
         self.gpio_monitor.refresh_layout(self.canvas.components)
         self.gpio_monitor.update_states(self.canvas.components)
         self.titel.setText(f"  ▶  {self.titel.text().strip()} — SIMULATIE")
-        gpio_txt = "Hardware RPi" if ON_RPI else "MockGPIO"
-        self.status.setText(
-            f"Simulatie actief  [{gpio_txt}]\n"
-            "⚙ GPIO = pin-koppelingen instellen")
+        koffer = self.canvas.koffer
+        if koffer and koffer.actief:
+            bron = "koffer verbonden" if SPI_AANWEZIG else "mockkoffer"
+            tekst = f"Simulatie actief  [{bron}]"
+            tekst += chr(10) + "GPIO-knop = kanalen Q1..Q8 en S1..S8 koppelen"
+        else:
+            reden = koffer.fout if koffer and koffer.fout else "onbekende oorzaak"
+            tekst = "Simulatie actief, maar de koffer reageert niet:"
+            tekst += chr(10) + reden
+        self.status.setText(tekst)
         self.canvas.setFocus()
         # Koppel canvas poll-callback aan monitor update
         self.canvas._on_gpio_update = self._on_gpio_update
