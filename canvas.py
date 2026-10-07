@@ -1121,7 +1121,7 @@ class FilePaneel(QWidget):
 
     def __init__(self, on_select, on_sim):
         super().__init__()
-        self.on_select  = on_select   # callback(data: dict, naam: str)
+        self.on_select  = on_select   # callback(data: dict, naam: str, pad: Path)
         self.on_sim     = on_sim      # callback()
         self.map_pad    = DEFAULT_DIR
         self._geselecteerd = None
@@ -1217,7 +1217,7 @@ class FilePaneel(QWidget):
                 data = json.load(f)
             self._geselecteerd = data
             self.sim_knop.setVisible(True)
-            self.on_select(data, naam)
+            self.on_select(data, naam, pad)
         except Exception as e:
             QMessageBox.critical(self, "Fout", f"Kan bestand niet laden:\n{e}")
 
@@ -1496,9 +1496,10 @@ class MainWindow(QMainWindow):
 
         p1l.addWidget(self._lijn())
         p1l.addWidget(self._sec("CIRCUIT"))
-        for tekst, slot in [("🗋  Nieuw",   self._nieuw),
-                             ("💾  Opslaan", self._opslaan),
-                             ("📂  Laden",   self._laden)]:
+        for tekst, slot in [("🗋  Nieuw",       self._nieuw),
+                             ("💾  Opslaan",     self._opslaan),
+                             ("🖫  Opslaan als", self._opslaan_als),
+                             ("📂  Laden",       self._laden)]:
             k = QPushButton(tekst); k.setStyleSheet(_knop_stijl(C_TEAL))
             k.clicked.connect(slot); p1l.addWidget(k)
 
@@ -1666,6 +1667,11 @@ class MainWindow(QMainWindow):
 
         self.monteur = None   # monteursvenster, door main.py gekoppeld
 
+        # Het bestand waar de huidige schakeling uit komt, zodat Opslaan
+        # dat bestand overschrijft in plaats van om een naam te vragen.
+        self.huidig_pad = None
+        self.huidige_naam = ""
+
         # Examentimer (MainWindow beheert de countdown)
         self._exam_timer = QTimer(self)
         self._exam_timer.setInterval(1000)
@@ -1732,8 +1738,10 @@ class MainWindow(QMainWindow):
 
     # ── Viewer callbacks ──────────────────────
 
-    def _circuit_geladen(self, data: dict, naam: str):
+    def _circuit_geladen(self, data: dict, naam: str, pad=None):
         self.canvas.load_circuit(data)
+        self.huidig_pad = Path(pad) if pad else None
+        self.huidige_naam = data.get("naam", naam)
         self.canvas.set_mode("view")
         self.stop_sim_knop.setVisible(False)
         self.storing_knop.setVisible(False)
@@ -1967,26 +1975,55 @@ class MainWindow(QMainWindow):
                 QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.canvas.leegmaken()
             self.canvas.set_mode("edit")
+            self.huidig_pad = None
+            self.huidige_naam = ""
             self.titel.setText("  ✏  Nieuw circuit")
 
     def _opslaan(self):
-        naam, ok = QInputDialog.getText(self, "Opslaan", "Naam van de schakeling:")
+        """
+        Overschrijf het bestand waar de schakeling uit komt. Is er nog geen
+        bestand, dan wordt alsnog om een naam gevraagd.
+        """
+        if not self.huidig_pad:
+            self._opslaan_als()
+            return
+        self._schrijf_circuit(self.huidig_pad, self.huidige_naam)
+
+    def _opslaan_als(self):
+        """Vraag om een naam en een bestand, en sla de schakeling daar op."""
+        naam, ok = QInputDialog.getText(
+            self, "Opslaan als", "Naam van de schakeling:",
+            text=self.huidige_naam)
         if not ok or not naam.strip():
             return
-        # Sla op in de circuits-map (ook zichtbaar in viewer)
+        naam = naam.strip()
         DEFAULT_DIR.mkdir(parents=True, exist_ok=True)
         pad, _ = QFileDialog.getSaveFileName(
             self, "Opslaan als",
-            str(DEFAULT_DIR / f"{naam.strip()}.json"),
+            str(DEFAULT_DIR / f"{naam}.json"),
             "JSON (*.json)")
         if not pad:
             return
-        data = self.canvas.naar_dict(); data["naam"] = naam.strip()
-        with open(pad, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        self.titel.setText(f"  ✏  {naam.strip()} (opgeslagen)")
-        self.file_paneel.ververs()   # ververs de bestandslijst
-        QMessageBox.information(self, "Opgeslagen", f"Opgeslagen als:\n{pad}")
+        if self._schrijf_circuit(Path(pad), naam):
+            QMessageBox.information(self, "Opgeslagen", f"Opgeslagen als: {pad}")
+
+    def _schrijf_circuit(self, pad, naam: str) -> bool:
+        """Schrijf de schakeling weg en onthoud dit bestand als het huidige."""
+        data = self.canvas.naar_dict()
+        data["naam"] = naam
+        try:
+            with open(pad, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            QMessageBox.critical(self, "Fout", f"Kan niet opslaan: {e}")
+            return False
+        self.huidig_pad = Path(pad)
+        self.huidige_naam = naam
+        self.titel.setText(f"  ✏  {naam}")
+        self.status.setText(f"Opgeslagen in {Path(pad).name}")
+        self.file_paneel.ververs()
+        return True
+
 
     def _laden(self):
         pad, _ = QFileDialog.getOpenFileName(
@@ -1999,6 +2036,8 @@ class MainWindow(QMainWindow):
             self.canvas.load_circuit(data)
             self.canvas.set_mode("edit")
             naam = data.get("naam", Path(pad).stem)
+            self.huidig_pad = Path(pad)
+            self.huidige_naam = naam
             self.titel.setText(f"  ✏  {naam}")
             self._modus("bewerk")
         except Exception as e:

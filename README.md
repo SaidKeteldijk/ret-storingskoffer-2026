@@ -247,7 +247,16 @@ Een deelschakeling wordt opgeslagen als JSON-bestand in de map `circuits`. Het b
 
 De velden `col` en `row` zijn rastercoördinaten, geen pixels. De contactnummering (`contact_start`) wordt bij het laden automatisch opnieuw berekend, tenzij het nummer handmatig is vastgezet met `manual_contact_start`.
 
-Om een nieuwe deelschakeling aan de koffer toe te voegen hoeft er dus geen code aangepast te worden. De schakeling wordt in de Bewerken-modus getekend en met de knop "Opslaan" in de map `circuits` weggeschreven, waarna hij direct in de lijst van de Bekijken-modus verschijnt.
+Om een nieuwe deelschakeling aan de koffer toe te voegen hoeft er dus geen code aangepast te worden. De schakeling wordt in de Bewerken-modus getekend en in de map `circuits` weggeschreven, waarna hij direct in de lijst van de Bekijken-modus verschijnt.
+
+Er zijn twee knoppen om op te slaan:
+
+- **Opslaan** schrijft naar het bestand waar de schakeling uit komt, zonder iets te vragen. De statusbalk meldt in welk bestand het terecht is gekomen.
+- **Opslaan als** vraagt om een naam en een bestand. Dit is de enige route voor een schakeling die nog nergens staat, en de manier om een bestaande schakeling onder een nieuwe naam af te splitsen.
+
+Na "Opslaan als" en na het laden van een bestand is dat bestand het huidige, zodat "Opslaan" daarna meteen de juiste plek raakt. Na "Nieuw" is er geen huidig bestand en gedraagt "Opslaan" zich als "Opslaan als".
+
+> **Let op:** de koppeling aan de kanalen van de koffer wordt in het bestand opgeslagen. Koppel je kanalen aan een schakeling en sla je die niet op, dan is de koppeling weg zodra je het circuit opnieuw uit de lijst laadt.
 
 # Software buggs
 
