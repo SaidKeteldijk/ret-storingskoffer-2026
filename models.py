@@ -31,6 +31,7 @@ class Component:
     gpio_dir:      str = "IN"
     defect:        bool = False
     manual_label:  bool = False
+    kanaal:        str = ""
 
 
 @dataclass

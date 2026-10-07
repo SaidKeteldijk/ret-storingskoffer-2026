@@ -70,6 +70,7 @@ De grafische interface is gebouwd met PyQt5. De schakelingen worden niet als afb
 | `canvas.py` | De tekenlaag (`CircuitCanvas`), de dialoogvensters en het instructeursvenster (`MainWindow`). |
 | `monteur.py` | Het examenscherm voor de monteur (`MonteurCanvas` en `MonteurWindow`). |
 | `display.py` | Bepaalt op welk scherm welk venster terechtkomt. |
+| `koffer_io.py` | De aansturing van de knoppen- en lampenprint via SPI. |
 | `schermtest.py` | Diagnose: toont welke schermen Qt ziet en hoe ze verdeeld worden. |
 | `simulator.py` | De elektrische simulatie van de schakeling. |
 | `gpio_manager.py`| De koppeling tussen de simulatie en de GPIO-pinnen. |
@@ -179,16 +180,24 @@ Per component kan de instructeur een storing instellen. Het gedrag per component
 | Motor | Draait niet, ook al staat er spanning op |
 | Lamp | Gaat niet branden, ook al staat er spanning op |
 
-# De GPIO-koppeling
+# De koppeling met de koffer
 
-Elk component kan aan een GPIO-pin van de Raspberry Pi gekoppeld worden. Dit gebeurt in de Bewerken-modus via de knop "GPIO". Er zijn twee richtingen:
+Elk component kan aan een kanaal van de knoppen- en lampenprint gekoppeld worden. Dit gebeurt in de Bewerken-modus via de knop "GPIO". Het componenttype bepaalt zelf om wat voor kanaal het gaat:
 
-- **INPUT** (`IN`) – de fysieke schakelaar in de koffer stuurt de simulatie aan. Een hoog signaal op de pin sluit de schakelaar in de simulatie.
-- **OUTPUT** (`OUT`) – de simulatie stuurt de fysieke koffer aan. Wanneer een lamp, motor of relaisspoel in de simulatie actief wordt, gaat de bijbehorende pin hoog.
+| Component | Kanaal | Werking |
+|------------------------------------------|----------|-----------------------------------------|
+| Schakelaar, wisselschakelaar, relaiscontact | S1 .. S8 | De fysieke knop stuurt de simulatie aan |
+| Lamp, motor, relaisspoel | Q1 .. Q8 | De simulatie stuurt de fysieke lamp aan |
 
-De pinnen worden aangesproken via de BCM-nummering. De bruikbare pinnen zijn GPIO 2 tot en met GPIO 27. Bij het opstarten en bij het afsluiten van de app worden alle pinnen als OUTPUT LOW gezet, zodat er geen enkele pin blijft zweven.
+Elk kanaal hoort bij één component; de dialoog weigert te sluiten zolang twee componenten hetzelfde kanaal delen.
 
-Tijdens de simulatie worden de ingangen elke 50 ms uitgelezen. Wanneer de app op een computer zonder Raspberry Pi hardware draait, wordt automatisch een `MockGPIO` geladen. De volledige app blijft dan werken en de ingangen kunnen met de muis omgeschakeld worden via het GPIO-monitorpaneel onderin het scherm. Hierdoor kan de software volledig op een laptop ontwikkeld en getest worden.
+De print zit op de SPI-bus (CE0) op hardware-adres `000`. De lampen Q1 tot en met Q8 hangen aan GPB0 tot en met GPB7 en zijn niet geïnverteerd: een hoge bit laat de lamp branden. De knoppen S1 tot en met S8 hangen aan GPA0 tot en met GPA7 en zijn actief laag, met een externe pull-up op de print.
+
+De aansturing zit in `koffer_io.py` en doet bewust **geen** hardware-reset: de RESET-lijn is gedeeld met de digitale 48V-kaarten en zou hun uitgangen laten zweven. Bij het starten van de simulatie wordt de print ingesteld met de latch eerst laag en pas daarna de richting op uitgang, zodat er geen lamp kort aanflitst. Bij het stoppen gaan alle lampen uit.
+
+Tijdens de simulatie worden de knoppen elke 50 ms uitgelezen. Draait de app op een computer zonder `spidev`, dan wordt automatisch een mockversie van de print geladen. De volledige app blijft dan werken en de knoppen kunnen met de muis omgeschakeld worden via het monitorpaneel onderin het scherm. Hierdoor kan de software volledig op een laptop ontwikkeld en getest worden.
+
+> **Let op:** de oude koppeling aan losse BCM-pinnen via `gpio_manager.py` bestaat nog voor bestanden van vóór deze wijziging, maar de dialoog biedt die niet meer aan. Zodra je een schakeling via de dialoog opnieuw koppelt, vervalt de pinkoppeling.
 
 # De schermverdeling
 

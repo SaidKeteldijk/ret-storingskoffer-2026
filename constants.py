@@ -55,6 +55,9 @@ GPIO_OUT_TYPES = {TOOL_LAMP, TOOL_MOTOR, TOOL_RCOIL}
 
 VALID_GPIO_PINS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
 
+KOFFER_KNOPPEN = [f"S{i + 1}" for i in range(8)]
+KOFFER_LAMPEN  = [f"Q{i + 1}" for i in range(8)]
+
 CONTACTS_PER_TYPE = {
     TOOL_SWITCH: 2,
     TOOL_SW2P_NO: 4,
