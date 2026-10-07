@@ -44,7 +44,8 @@ def reset_vrijgeven():
         GPIO.output(RESET_PIN, GPIO.HIGH)
         return True
     except Exception as e:
-        print(f"[KOFFER] RESET-lijn hoog zetten mislukt: {e}")
+        print(f"[KOFFER] RESET-lijn niet opgeeist ({e}); "
+              "dat is geen probleem zolang de print antwoordt")
         return False
 
 

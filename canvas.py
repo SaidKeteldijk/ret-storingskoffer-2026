@@ -366,6 +366,10 @@ class CircuitCanvas(QWidget):
             self.sim.load(self.components, self.wires)
             if self.koffer:
                 self.koffer.init()
+                gekoppeld = [f"{c.kanaal}={c.label or c.type}"
+                             for c in self.components if c.kanaal]
+                print("[KOFFER] gekoppeld: "
+                      + (", ".join(gekoppeld) if gekoppeld else "NIETS"))
             if self.gpio_mgr:
                 self.gpio_mgr.configure_pins(self.components)
             if self.koffer or self.gpio_mgr:
