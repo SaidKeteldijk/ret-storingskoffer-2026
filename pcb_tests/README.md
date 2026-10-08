@@ -30,7 +30,8 @@ hoofdmap van `pcb_tests`.
 | `knoppen_lampen/` | `knoppen-test.py` | Knoppen S1..S8 uitlezen |
 | `knoppen_lampen/` | `semi-integratietest-knop-lamp.py` | Knop bedient de bijbehorende lamp |
 | `digitaal/` | `digital.py` | De vier 48V-uitgangskaarten per pin bedienen |
-| `analoog/` | `dac-tester.py` | De twee DAC8564's: 4-20 mA en 0-48 V |
+| `analoog/` | `dac-tester.py` | De twee DAC8564's van een losse print: 4-20 mA en 0-48 V |
+| `analoog/` | `koffer-analoog.py` | De acht klemmen U1-U8 en lussen I1-I8 over beide printen |
 
 De scripts staan los van elkaar en importeren niets uit een andere map, dus je
 kunt ze vanuit `pcb_tests` aanroepen of eerst naar de map toe gaan:
@@ -171,13 +172,31 @@ Commando's: `<pcb> <pin> hoog`, `<pcb> <pin> laag`, `status`, `uit`, `help`,
 
 ## analoog/ - de DAC-print
 
-Twee DAC8564's op CE1 (GPIO7, fysieke pin 26, naar !SYNC). De DAC8564 heeft geen
-data-uitgang, dus MISO blijft ongebruikt en de bus draait in SPI-mode 1.
+Elke DAC-print draagt twee DAC8564's. De !SYNC van beide printen gaat naar CE1
+(GPIO7, fysieke pin 26). De DAC8564 heeft geen data-uitgang, dus MISO blijft
+ongebruikt en de bus draait in SPI-mode 1.
 
-| DAC | Adres | Keten | Bereik |
-|-----|-------|--------------------------|-------------|
-| U1 | 00 | XTR117 stroomlus | 4 tot 20 mA |
-| U3 | 01 | MCP6002 + 2N7002 booster | 0 tot 48 V |
+Omdat beide printen dezelfde chip-select delen, moeten alle vier de adressen
+uniek zijn. De DAC8564 heeft alleen A0 en A1, dus er zijn precies vier
+adressen beschikbaar:
+
+| Print | DAC | Adres | Keten | Bereik |
+|-------|------------|-------|--------------------------|-------------|
+| 1 | DAC 1 (U1) | 00 | XTR117 stroomlus | 4 tot 20 mA |
+| 1 | DAC 2 (U3) | 01 | MCP6002 + 2N7002 booster | 0 tot 48 V |
+| 2 | DAC 1 (U1) | 10 | XTR117 stroomlus | 4 tot 20 mA |
+| 2 | DAC 2 (U3) | 11 | MCP6002 + 2N7002 booster | 0 tot 48 V |
+
+`dac-tester.py` kent alleen de adressen 00 en 01 en test dus een losse print.
+`koffer-analoog.py` kent alle vier de adressen en spreekt de uitgangen aan met
+de klemnummers van de koffer: U1 tot en met U8 voor de spanningsuitgangen en
+I1 tot en met I8 voor de stroomlussen. U1-U4 en I1-I4 zitten op print 1,
+U5-U8 en I5-I8 op print 2, in de kanaalvolgorde A, B, C, D.
+
+> **Let op:** de aanduiding U komt twee keer voor. U1 en U3 zijn de
+> componentnummers van de twee DAC8564's op de print; U1 tot en met U8 zijn de
+> klemnummers van de koffer. In `koffer-analoog.py` wordt daarom consequent
+> DAC 1 en DAC 2 gebruikt voor de IC's.
 
 **XTR117.** R3 van 10 k tussen VOUT en IIN, stroomversterking 100x:
 
