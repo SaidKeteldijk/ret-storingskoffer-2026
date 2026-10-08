@@ -191,6 +191,10 @@ Elk component kan aan een kanaal van de knoppen- en lampenprint gekoppeld worden
 
 Elk kanaal hoort bij één component; de dialoog weigert te sluiten zolang twee componenten hetzelfde kanaal delen.
 
+De koppeling hoort bij de tekening en wordt daarom in het schakelingbestand bewaard. Zodra je het venster met OK sluit, wordt die koppeling meteen weggeschreven naar het bestand waar de schakeling uit komt. Je hoeft dus niet apart op te slaan, en na het opnieuw laden staat de koppeling er nog. De statusbalk meldt hoeveel kanalen er gekoppeld zijn en in welk bestand dat is vastgelegd.
+
+Heeft de schakeling nog geen bestand, bijvoorbeeld na "Nieuw", dan kan er niets vastgelegd worden. De statusbalk zegt dat dan, zodat je weet dat je eerst "Opslaan als" moet gebruiken.
+
 De print zit op de SPI-bus (CE0) op hardware-adres `000`. De lampen Q1 tot en met Q8 hangen aan GPB0 tot en met GPB7 en zijn niet geïnverteerd: een hoge bit laat de lamp branden. De knoppen S1 tot en met S8 hangen aan GPA0 tot en met GPA7 en zijn actief laag, met een externe pull-up op de print.
 
 De aansturing zit in `koffer_io.py` en doet bewust **geen** hardware-reset: de RESET-lijn is gedeeld met de digitale 48V-kaarten en zou hun uitgangen laten zweven. Bij het starten van de simulatie wordt de print ingesteld met de latch eerst laag en pas daarna de richting op uitgang, zodat er geen lamp kort aanflitst. Bij het stoppen gaan alle lampen uit.
@@ -256,7 +260,7 @@ Er zijn twee knoppen om op te slaan:
 
 Na "Opslaan als" en na het laden van een bestand is dat bestand het huidige, zodat "Opslaan" daarna meteen de juiste plek raakt. Na "Nieuw" is er geen huidig bestand en gedraagt "Opslaan" zich als "Opslaan als".
 
-> **Let op:** de koppeling aan de kanalen van de koffer wordt in het bestand opgeslagen. Koppel je kanalen aan een schakeling en sla je die niet op, dan is de koppeling weg zodra je het circuit opnieuw uit de lijst laadt.
+> De koppeling aan de kanalen van de koffer hoort bij de tekening en wordt meteen in het bestand vastgelegd zodra je het koppelvenster met OK sluit. Opslaan is daarvoor niet nodig.
 
 # Software buggs
 

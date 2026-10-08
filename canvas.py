@@ -450,15 +450,17 @@ class CircuitCanvas(QWidget):
                 self.sim.load(self.components, self.wires)
         self.update()
 
-    def open_gpio_dialog(self):
-        """Open het GPIO-configuratievenster."""
+    def open_gpio_dialog(self) -> bool:
+        """Open het koppelvenster. Geeft True als er iets gewijzigd is."""
         dlg = GPIOConfigDialog(self.components, parent=self)
-        if dlg.exec_() == QDialog.Accepted:
+        gewijzigd = dlg.exec_() == QDialog.Accepted
+        if gewijzigd:
             dlg.apply()
             # Herconfigureer pins als simulatie actief is
-            if self.mode == "sim":
+            if self.mode == "sim" and self.gpio_mgr:
                 self.gpio_mgr.configure_pins(self.components)
         self.update()
+        return gewijzigd
 
     def load_circuit(self, data: dict):
         # Veilig laden: ontbrekende velden krijgen standaardwaarden
@@ -1795,10 +1797,28 @@ class MainWindow(QMainWindow):
         self.canvas.open_fault_dialog()
 
     def _gpio_config(self):
-        """Open GPIO-configuratiedialoog en ververs de monitor erna."""
-        self.canvas.open_gpio_dialog()
+        """Open het koppelvenster, ververs de monitor en leg de koppeling vast."""
+        if not self.canvas.open_gpio_dialog():
+            return
         self.gpio_monitor.refresh_layout(self.canvas.components)
         self.gpio_monitor.update_states(self.canvas.components)
+        self._bewaar_koppeling()
+
+    def _bewaar_koppeling(self):
+        """
+        Schrijf de koppeling meteen naar het bestand van de schakeling. De
+        koppeling hoort bij de tekening, dus zonder dit zou je na elke keer
+        laden opnieuw moeten koppelen.
+        """
+        aantal = sum(1 for c in self.canvas.components if c.kanaal)
+        if not self.huidig_pad:
+            self.status.setText(
+                f"{aantal} kanalen gekoppeld, nog niet opgeslagen."
+                + chr(10) + "Gebruik Opslaan als om deze schakeling een bestand te geven.")
+            return
+        if self._schrijf_circuit(self.huidig_pad, self.huidige_naam):
+            self.status.setText(f"{aantal} kanalen gekoppeld en opgeslagen"
+                                + chr(10) + f"in {self.huidig_pad.name}")
 
     def _on_gpio_update(self):
         """Callback vanuit de GPIO-poll: ververs de monitor."""
