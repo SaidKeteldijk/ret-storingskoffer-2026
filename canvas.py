@@ -1127,12 +1127,15 @@ class FilePaneel(QWidget):
     Signaleert welk circuit geselecteerd is via callback.
     """
 
-    def __init__(self, on_select, on_sim):
+    def __init__(self, on_select, on_sim, on_verwijder=None):
         super().__init__()
-        self.on_select  = on_select   # callback(data: dict, naam: str, pad: Path)
-        self.on_sim     = on_sim      # callback()
-        self.map_pad    = DEFAULT_DIR
+        self.on_select     = on_select      # callback(data: dict, naam: str, pad: Path)
+        self.on_sim        = on_sim         # callback()
+        self.on_verwijder  = on_verwijder   # callback(pad: Path, naam: str)
+        self.map_pad       = DEFAULT_DIR
         self._geselecteerd = None
+        self._geselecteerd_pad = None
+        self._geselecteerd_naam = ""
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -1177,7 +1180,26 @@ class FilePaneel(QWidget):
         self.sim_knop.clicked.connect(self.on_sim)
         layout.addWidget(self.sim_knop)
 
+        self.verwijder_knop = QPushButton("🗑  Verwijderen")
+        self.verwijder_knop.setStyleSheet(_knop_stijl(C_RED))
+        self.verwijder_knop.setVisible(False)
+        self.verwijder_knop.clicked.connect(self._verwijder_gekozen)
+        layout.addWidget(self.verwijder_knop)
+
         self.ververs()
+
+    def _verwijder_gekozen(self):
+        """Geef het gekozen circuit door aan het hoofdvenster."""
+        if self.on_verwijder and self._geselecteerd_pad:
+            self.on_verwijder(self._geselecteerd_pad, self._geselecteerd_naam)
+
+    def wis_selectie(self):
+        """Vergeet het gekozen circuit en verberg de bijbehorende knoppen."""
+        self._geselecteerd = None
+        self._geselecteerd_pad = None
+        self._geselecteerd_naam = ""
+        self.sim_knop.setVisible(False)
+        self.verwijder_knop.setVisible(False)
 
     def ververs(self):
         """Herlaad bestandslijst uit de huidige map."""
@@ -1224,7 +1246,10 @@ class FilePaneel(QWidget):
             with open(pad, encoding="utf-8") as f:
                 data = json.load(f)
             self._geselecteerd = data
+            self._geselecteerd_pad = pad
+            self._geselecteerd_naam = naam
             self.sim_knop.setVisible(True)
+            self.verwijder_knop.setVisible(True)
             self.on_select(data, naam, pad)
         except Exception as e:
             QMessageBox.critical(self, "Fout", f"Kan bestand niet laden:\n{e}")
@@ -1480,7 +1505,8 @@ class MainWindow(QMainWindow):
         # ── Zijbalk p0: Bekijken ──────────────
         self.file_paneel = FilePaneel(
             on_select=self._circuit_geladen,
-            on_sim=self._start_sim
+            on_sim=self._start_sim,
+            on_verwijder=self._circuit_verwijderen,
         )
         self.zij_stack.addWidget(self.file_paneel)
 
@@ -1770,6 +1796,40 @@ class MainWindow(QMainWindow):
         # Haal een blijven staande "Einde examen" van het monteursscherm.
         if self.monteur:
             self.monteur.wachtstand()
+
+    def _circuit_verwijderen(self, pad, naam: str):
+        """Verwijder een opgeslagen schakeling van de schijf."""
+        if self.canvas.exam_active:
+            QMessageBox.warning(self, "Examen actief",
+                "Stop het examen eerst voordat je een schakeling verwijdert.")
+            return
+
+        antwoord = QMessageBox.question(
+            self, "Schakeling verwijderen",
+            f"De schakeling '{naam}' definitief verwijderen?"
+            + chr(10) + chr(10) + f"Bestand: {pad}"
+            + chr(10) + "Dit kan niet ongedaan gemaakt worden.",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if antwoord != QMessageBox.Yes:
+            return
+
+        try:
+            Path(pad).unlink()
+        except Exception as e:
+            QMessageBox.critical(self, "Fout", f"Kan de schakeling niet verwijderen: {e}")
+            return
+
+        # Was dit het bestand waar de getoonde schakeling uit komt, dan is er
+        # geen bestand meer om naar op te slaan. De tekening blijft staan.
+        if self.huidig_pad and Path(self.huidig_pad) == Path(pad):
+            self.huidig_pad = None
+            self.status.setText(f"'{naam}' verwijderd. De tekening staat nog op het"
+                                + chr(10) + "scherm; gebruik Opslaan als om hem te bewaren.")
+        else:
+            self.status.setText(f"'{naam}' verwijderd")
+
+        self.file_paneel.wis_selectie()
+        self.file_paneel.ververs()
 
     def _start_sim(self):
         self.canvas.set_mode("sim")

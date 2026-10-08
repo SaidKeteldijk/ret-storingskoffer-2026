@@ -124,7 +124,7 @@ pip install -r requirements.txt
 
 Het instructeursscherm heeft drie modi die linksboven omgeschakeld kunnen worden:
 
-- **Bekijken** – hier kiest de instructeur een opgeslagen deelschakeling uit de lijst. De schakeling wordt weergegeven zonder dat er iets gewijzigd kan worden.
+- **Bekijken** – hier kiest de instructeur een opgeslagen deelschakeling uit de lijst. De schakeling wordt weergegeven zonder dat er iets gewijzigd kan worden. Zodra er een schakeling gekozen is verschijnen de knoppen **Simuleren** en **Verwijderen**. Verwijderen wist het bestand van de schijf, na een bevestiging waarin de naam en het volledige pad staan. Tijdens een lopend examen wordt verwijderen geweigerd. Verwijder je de schakeling die op dat moment in beeld staat, dan blijft de tekening gewoon staan maar is er geen bestand meer om naar op te slaan; de statusbalk zegt dat je dan "Opslaan als" moet gebruiken.
 - **Bewerken** – hier tekent de instructeur een nieuwe deelschakeling of past hij een bestaande aan. In deze modus kunnen ook de storingen en de GPIO-koppelingen ingesteld worden.
 - **Examen** – hier stelt de instructeur de examentijd in en start hij het examen.
 
