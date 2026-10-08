@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Shellscripts en unit-bestanden altijd met LF, anders faalt de Pi erop
+*.sh text eol=lf
+*.service text eol=lf

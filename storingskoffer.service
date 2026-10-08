@@ -1,0 +1,15 @@
+[Unit]
+Description=Storingskoffer Dashboard
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Github/ret-storingskoffer-2026
+ExecStart=/bin/bash %h/Github/ret-storingskoffer-2026/start_app.sh
+Environment=DISPLAY=:0
+Environment=QT_QPA_PLATFORM=xcb
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

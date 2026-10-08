@@ -283,54 +283,83 @@ Een defecte lamp of motor bleef in het simulatiemodel stroom geleiden. De compon
 
 Relaislabels werden bij elke toevoeging of verwijdering opnieuw genummerd op volgorde in de lijst. Omdat de koppeling tussen spoel en contact uitsluitend op label werkt, konden twee relaiscontacten daardoor stilzwijgend van spoel wisselen. Labels die de instructeur zelf instelt worden nu vastgelegd met de vlag `manual_label` en niet meer automatisch hernummerd.
 
-# Linux configuratie
+# Automatisch starten op de Raspberry Pi
 
-Om bij het opstarten van de Raspberry Pi ook de VENV (Virtuele omgeving) en de Python app op te starten kan er een `storingskoffer.service` routine aangemaakt worden. Het `.service` bestand hoort in `/etc/systemd/system/storingskoffer.service` te staan.
+Om de storingskoffer na het inschakelen vanzelf te laten opstarten, staan er twee
+bestanden in de repository: `start_app.sh` en `storingskoffer.service`.
+
+`start_app.sh` wacht tot de grafische sessie beschikbaar is, activeert de virtuele
+omgeving en start de app. Dat wachten is nodig: zonder scherm valt `main.py` terug
+op het offscreen-platform en verschijnt er nooit iets, zonder foutmelding.
+
+```console
+#!/bin/bash
+cd "$(dirname "$0")" || exit 1
+
+for _ in $(seq 1 30); do
+    [ -e /tmp/.X11-unix/X0 ] && break
+    sleep 1
+done
+
+source venv-rpi/bin/activate
+exec python3 -u main.py
+```
+> start_app.sh
+
+De service is een gebruikersservice, geen systeemservice. Dat is bewust: de app
+heeft de grafische sessie van de gebruiker nodig, en een gebruikersservice start
+mee met die sessie. De `%h` laat systemd zelf de thuismap invullen, zodat er geen
+pad hardgecodeerd staat.
 
 ```console
 [Unit]
 Description=Storingskoffer Dashboard
-After=graphical.target
+After=default.target
 
 [Service]
-User=pi
+Type=simple
+WorkingDirectory=%h/Github/ret-storingskoffer-2026
+ExecStart=/bin/bash %h/Github/ret-storingskoffer-2026/start_app.sh
 Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/pi/.Xauthority
-Environment=XDG_RUNTIME_DIR=/run/user/1000
-Environment=GDK_BACKEND=x11
 Environment=QT_QPA_PLATFORM=xcb
-ExecStart=/bin/bash /home/pi/Github/ret-storingskoffer-2026/start_app.sh
 Restart=always
-RestartSec=4
-KillMode=process
-TimeoutSec=infinity
+RestartSec=5
 
 [Install]
-WantedBy=graphical.target
+WantedBy=default.target
 ```
 > storingskoffer.service
 
-In deze routine wordt er gewacht tot dat de grafische omgeving is opgestart. Zodra dit gebeurd is wordt het bestand `start_app.sh` opgestart. In dit bestand staan de Linux commando's die nodig zijn om de VENV (virtuele omgeving) en de Python app op te starten.
+## Installeren
 
 ```console
-#!/bin/bash
-cd /home/pi/Github/ret-storingskoffer-2026
-source venv-rpi/bin/activate
-python3 main.py
+mkdir -p ~/.config/systemd/user
+cp storingskoffer.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now storingskoffer.service
 ```
-> start_app.sh
 
-De regel `Environment=QT_QPA_PLATFORM=xcb` is belangrijk. Zonder deze regel valt de app terug op het `offscreen` platform wanneer de variabele `DISPLAY` niet gezet is. De app start dan zonder foutmelding op, maar er verschijnt nooit iets op een van beide schermen.
+De regel `Environment=QT_QPA_PLATFORM=xcb` is belangrijk. De Raspberry Pi draait
+Wayland, maar de app positioneert zijn eigen vensters en heeft daarvoor XWayland
+nodig. Zonder deze regel kan de verdeling over de twee schermen mislukken.
 
-De service wordt met de volgende commando's ingeschakeld:
+## Beheren
 
 ```console
-sudo systemctl daemon-reload
-sudo systemctl enable storingskoffer.service
-sudo systemctl start storingskoffer.service
+systemctl --user status storingskoffer.service     # draait hij?
+journalctl --user -u storingskoffer.service -f     # meldingen live meelezen
+systemctl --user restart storingskoffer.service    # opnieuw starten
+systemctl --user stop storingskoffer.service       # tijdelijk stoppen
+systemctl --user disable --now storingskoffer.service
 ```
 
-Met het commando `journalctl -u storingskoffer.service -f` kunnen de meldingen van de app live meegelezen worden.
+In het journaal zie je de opstartmeldingen terug, zoals `[KOFFER] print 000 klaar`
+en `[SCHERM] Instructeur op HDMI-A-1, monteur op DSI-1`. Dat is de eerste plek om
+te kijken als er iets niet goed gaat.
+
+> **Let op tijdens het ontwikkelen:** door `Restart=always` start de app vanzelf
+> opnieuw zodra je hem afsluit. Zet de service stil met `systemctl --user stop`
+> voordat je handmatig gaat testen.
 
 # Inloggegevens
 
