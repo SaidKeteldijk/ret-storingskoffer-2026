@@ -128,6 +128,34 @@ Het instructeursscherm heeft drie modi die linksboven omgeschakeld kunnen worden
 - **Bewerken** – hier tekent de instructeur een nieuwe deelschakeling of past hij een bestaande aan. In deze modus kunnen ook de storingen en de GPIO-koppelingen ingesteld worden.
 - **Examen** – hier stelt de instructeur de examentijd in en start hij het examen.
 
+Onderaan de zijbalk staan twee knoppen voor het beheer van de koffer.
+
+**Software bijwerken** haalt met `git pull` de nieuwste versie van de software op en ververst daarna met `apt-get update` de pakketlijsten. Tijdens het uitvoeren blijft het venster reageren, en achteraf verschijnt een overzicht van wat er gebeurd is. Is er werkelijk nieuwe software opgehaald, dan meldt de app dat je de koffer opnieuw moet opstarten om die te gebruiken.
+
+Voor het verversen van de pakketlijsten is root nodig. De app gebruikt daarom `sudo -n`, zodat er nooit op een wachtwoordprompt gewacht wordt. Mag de gebruiker dat niet, dan meldt de app dat; je lost het op met een regel in `/etc/sudoers.d/storingskoffer`, aan te maken met `sudo visudo -f /etc/sudoers.d/storingskoffer`:
+
+```console
+pi ALL=(ALL) NOPASSWD: /usr/bin/apt-get update
+```
+
+Op een computer die geen Raspberry Pi is wordt alleen de software opgehaald en worden de pakketlijsten overgeslagen.
+
+De knop **Koffer uitschakelen**. Die vraagt of de koffer afgesloten of opnieuw opgestart moet worden. Voordat de opdracht wordt doorgegeven stopt de app een eventueel lopend examen, verlaat de simulatie en zet alle lampen en uitgangen uit. Dat is nodig omdat bij een directe afsluiting de normale afsluitroutine niet meer aan bod komt en de uitgangen anders in hun laatste stand blijven staan.
+
+Op een computer die geen Raspberry Pi is gebeurt er niets; de app meldt dan alleen dat de opdracht uitsluitend op de koffer werkt. Zo sluit een misklik tijdens het ontwikkelen niet je eigen machine af.
+
+Afsluiten gebeurt via `systemctl poweroff`. Krijg je de melding `Interactive authentication required`, dan mag de gebruiker dat niet zonder wachtwoord. Dat los je op met een polkit-regel in `/etc/polkit-1/rules.d/50-storingskoffer.rules`:
+
+```console
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.login1.power-off" ||
+         action.id == "org.freedesktop.login1.reboot") &&
+        subject.user == "pi") {
+        return polkit.Result.YES;
+    }
+});
+```
+
 In de Bewerken-modus zijn de volgende componenten beschikbaar:
 
 | Gereedschap | Symbool | Aantal contacten |

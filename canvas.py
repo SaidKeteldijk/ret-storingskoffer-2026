@@ -6,6 +6,9 @@ RET N.V. | Said Keteldijk (1045604)
 
 import json
 import math
+import subprocess
+import sys
+import time
 from pathlib import Path
 from dataclasses import asdict
 from typing import List, Optional, Tuple, Dict, Set
@@ -1594,6 +1597,16 @@ class MainWindow(QMainWindow):
             f"color:{C_MUTED}; font-size:10px; font-family:'Courier New'; padding:4px;")
         zij_l.addWidget(self.status)
 
+        self.update_knop = QPushButton("Software bijwerken")
+        self.update_knop.setStyleSheet(_knop_stijl(C_TEAL))
+        self.update_knop.clicked.connect(self._bijwerken)
+        zij_l.addWidget(self.update_knop)
+
+        self.afsluit_knop = QPushButton("Koffer uitschakelen")
+        self.afsluit_knop.setStyleSheet(_knop_stijl(C_RED))
+        self.afsluit_knop.clicked.connect(self._afsluiten)
+        zij_l.addWidget(self.afsluit_knop)
+
         # ── Rechterpaneel ─────────────────────
         rechts = QWidget(); rechts.setStyleSheet(f"background-color:{C_BG};")
         rl = QVBoxLayout(rechts); rl.setContentsMargins(0, 0, 0, 0); rl.setSpacing(0)
@@ -2075,6 +2088,136 @@ class MainWindow(QMainWindow):
                 self.showFullScreen()
         else:
             super().keyPressEvent(event)
+
+    def _draai(self, opdracht, werkmap=None, tijdslimiet=300):
+        """
+        Voer een opdracht uit en houd het venster ondertussen levend. Zonder
+        die processEvents bevriest de interface zolang de opdracht loopt, wat
+        op het aanraakscherm overkomt alsof de koffer is vastgelopen.
+        """
+        try:
+            proces = subprocess.Popen(
+                opdracht, cwd=werkmap, stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, text=True)
+        except Exception as e:
+            return 1, f"Kan de opdracht niet starten: {e}"
+
+        begin = time.time()
+        while proces.poll() is None:
+            QApplication.processEvents()
+            time.sleep(0.05)
+            if time.time() - begin > tijdslimiet:
+                proces.kill()
+                return 1, "De opdracht duurde te lang en is afgebroken."
+
+        return proces.returncode, (proces.stdout.read() or "").strip()
+
+    def _bijwerken(self):
+        """Haal de nieuwste code op en ververs de pakketlijsten."""
+        antwoord = QMessageBox.question(
+            self, "Software bijwerken",
+            "De nieuwste versie van de software ophalen en de pakketlijsten "
+            "verversen?" + chr(10) + chr(10) + "Hiervoor is een internetverbinding nodig.",
+            QMessageBox.Yes | QMessageBox.No)
+        if antwoord != QMessageBox.Yes:
+            return
+
+        werkmap = str(Path(__file__).resolve().parent)
+        verslag = []
+
+        self.status.setText("Bezig met ophalen van de software...")
+        QApplication.processEvents()
+
+        _, voor = self._draai(["git", "rev-parse", "HEAD"], werkmap, 30)
+        code, uitvoer = self._draai(["git", "pull"], werkmap, 120)
+        _, na = self._draai(["git", "rev-parse", "HEAD"], werkmap, 30)
+        verslag.append("Software ophalen: " + ("gelukt" if code == 0 else "mislukt"))
+        verslag.append(uitvoer or "geen uitvoer")
+        nieuwe_versie = code == 0 and voor != na
+
+        if sys.platform.startswith("linux"):
+            self.status.setText("Bezig met verversen van de pakketlijsten...")
+            QApplication.processEvents()
+            code2, uitvoer2 = self._draai(["sudo", "-n", "apt-get", "update"], werkmap, 300)
+            verslag.append("")
+            verslag.append("Pakketlijsten: " + ("gelukt" if code2 == 0 else "mislukt"))
+            if code2 != 0:
+                verslag.append(uitvoer2 or "geen uitvoer")
+                verslag.append("Lukt dit niet, dan mag de gebruiker apt-get niet "
+                               "zonder wachtwoord draaien. Zie de README.")
+        else:
+            verslag.append("")
+            verslag.append("Pakketlijsten verversen werkt alleen op de koffer.")
+
+        if nieuwe_versie:
+            verslag.append("")
+            verslag.append("Er is nieuwe software opgehaald. Start de koffer opnieuw "
+                           "op om die te gebruiken.")
+
+        self.status.setText("Bijwerken afgerond"
+                            + (chr(10) + "nieuwe versie opgehaald" if nieuwe_versie else ""))
+        QMessageBox.information(self, "Software bijwerken", chr(10).join(verslag))
+
+    def _afsluiten(self):
+        """Vraag of de koffer uit moet of opnieuw opgestart."""
+        vraag = QMessageBox(self)
+        vraag.setWindowTitle("Koffer afsluiten")
+        vraag.setIcon(QMessageBox.Question)
+        vraag.setText("Wat wil je met de koffer doen?")
+
+        toelichting = "De simulatie stopt en alle lampen en uitgangen gaan uit."
+        if self.canvas.exam_active:
+            toelichting = ("Er loopt nu een examen. Dat wordt afgebroken, "
+                           "de simulatie stopt en alle lampen en uitgangen gaan uit.")
+        vraag.setInformativeText(toelichting)
+
+        knop_uit = vraag.addButton("Afsluiten", QMessageBox.AcceptRole)
+        knop_herstart = vraag.addButton("Opnieuw opstarten", QMessageBox.AcceptRole)
+        vraag.addButton("Annuleren", QMessageBox.RejectRole)
+        vraag.setDefaultButton(knop_uit)
+        vraag.exec_()
+
+        gekozen = vraag.clickedButton()
+        if gekozen is knop_uit:
+            self._systeemopdracht(["systemctl", "poweroff"], "afsluiten")
+        elif gekozen is knop_herstart:
+            self._systeemopdracht(["systemctl", "reboot"], "opnieuw opstarten")
+
+    def _systeemopdracht(self, opdracht, omschrijving):
+        """
+        Zet eerst de hardware veilig en geef daarna de opdracht door. Bij een
+        directe afsluiting loopt closeEvent niet, dus de lampen en de GPIO-pinnen
+        moeten hier zelf uitgezet worden.
+        """
+        if self.canvas.exam_active:
+            self._exam_timer.stop()
+            self.canvas.exam_active = False
+        self.canvas.set_mode("view")
+        if self.canvas.koffer:
+            self.canvas.koffer.cleanup()
+        if self.canvas.gpio_mgr:
+            self.canvas.gpio_mgr.cleanup()
+
+        if not sys.platform.startswith("linux"):
+            QMessageBox.information(
+                self, "Alleen op de koffer",
+                f"De opdracht om de koffer {omschrijving} werkt alleen op de "
+                "Raspberry Pi. Op deze computer gebeurt er verder niets.")
+            return
+
+        self.status.setText(f"Bezig met {omschrijving}...")
+        try:
+            klaar = subprocess.run(opdracht, capture_output=True, text=True, timeout=15)
+        except Exception as e:
+            QMessageBox.critical(self, "Mislukt", f"Kan de koffer niet {omschrijving}: {e}")
+            return
+
+        if klaar.returncode != 0:
+            melding = (klaar.stderr or klaar.stdout or "").strip()
+            QMessageBox.critical(
+                self, "Mislukt",
+                f"Kan de koffer niet {omschrijving}. Het systeem meldt:"
+                + chr(10) + chr(10) + (melding or "geen toelichting"))
 
     def closeEvent(self, event):
         """GPIO-pins vrijgeven bij afsluiten — alle pins naar LOW."""
