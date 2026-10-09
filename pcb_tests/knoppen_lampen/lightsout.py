@@ -47,7 +47,7 @@ def main():
         if read(IODIRB) != 0x00 or read(OLATB) != 0x00:
             raise RuntimeError("MCP op adres 000 reageert niet zoals verwacht")
 
-        print("Lampen Q1..Q8 uit, GPB0..GPB7 als uitgang laag gezet.")
+        print("Lampen H1..H8 uit, GPB0..GPB7 als uitgang laag gezet.")
         print("Knoppen S1..S8 (GPA0..GPA7) staan als ingang klaar.")
 
     finally:

@@ -215,15 +215,17 @@ Elk component kan aan een kanaal van de knoppen- en lampenprint gekoppeld worden
 | Component | Kanaal | Werking |
 |------------------------------------------|----------|-----------------------------------------|
 | Schakelaar, wisselschakelaar, relaiscontact | S1 .. S8 | De fysieke knop stuurt de simulatie aan |
-| Lamp, motor, relaisspoel | Q1 .. Q8 | De simulatie stuurt de fysieke lamp aan |
+| Lamp, motor, relaisspoel | H1 .. H8 | De simulatie stuurt de fysieke lamp aan |
 
 Elk kanaal hoort bij één component; de dialoog weigert te sluiten zolang twee componenten hetzelfde kanaal delen.
+
+De lampen zijn aangeduid met H, de letterklasse die IEC 81346-2 aan signaleringsmiddelen toekent. Staat op de print nog de oude aanduiding Q, dan geldt H1 als Q1, H2 als Q2 en zo verder; de pinbezetting is niet veranderd. Schakelingbestanden waarin nog een kanaal Q staat, blijven werken: `koffer_io.py` leest Q en H als dezelfde lamp.
 
 De koppeling hoort bij de tekening en wordt daarom in het schakelingbestand bewaard. Zodra je het venster met OK sluit, wordt die koppeling meteen weggeschreven naar het bestand waar de schakeling uit komt. Je hoeft dus niet apart op te slaan, en na het opnieuw laden staat de koppeling er nog. De statusbalk meldt hoeveel kanalen er gekoppeld zijn en in welk bestand dat is vastgelegd.
 
 Heeft de schakeling nog geen bestand, bijvoorbeeld na "Nieuw", dan kan er niets vastgelegd worden. De statusbalk zegt dat dan, zodat je weet dat je eerst "Opslaan als" moet gebruiken.
 
-De print zit op de SPI-bus (CE0) op hardware-adres `000`. De lampen Q1 tot en met Q8 hangen aan GPB0 tot en met GPB7 en zijn niet geïnverteerd: een hoge bit laat de lamp branden. De knoppen S1 tot en met S8 hangen aan GPA0 tot en met GPA7 en zijn actief laag, met een externe pull-up op de print.
+De print zit op de SPI-bus (CE0) op hardware-adres `000`. De lampen H1 tot en met H8 hangen aan GPB0 tot en met GPB7 en zijn niet geïnverteerd: een hoge bit laat de lamp branden. De knoppen S1 tot en met S8 hangen aan GPA0 tot en met GPA7 en zijn actief laag, met een externe pull-up op de print.
 
 De aansturing zit in `koffer_io.py` en doet bewust **geen** hardware-reset: de RESET-lijn is gedeeld met de digitale 48V-kaarten en zou hun uitgangen laten zweven. Bij het starten van de simulatie wordt de print ingesteld met de latch eerst laag en pas daarna de richting op uitgang, zodat er geen lamp kort aanflitst. Bij het stoppen gaan alle lampen uit.
 

@@ -57,7 +57,7 @@ SPI_GERESERVEERD = [7, 8, 9, 10, 11, 24, 25]
 VALID_GPIO_PINS = [p for p in range(2, 28) if p not in SPI_GERESERVEERD]
 
 KOFFER_KNOPPEN = [f"S{i + 1}" for i in range(8)]
-KOFFER_LAMPEN  = [f"Q{i + 1}" for i in range(8)]
+KOFFER_LAMPEN  = [f"H{i + 1}" for i in range(8)]
 
 CONTACTS_PER_TYPE = {
     TOOL_SWITCH: 2,

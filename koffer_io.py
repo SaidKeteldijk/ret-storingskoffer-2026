@@ -61,7 +61,8 @@ def kanaal_index(kanaal: str) -> int:
 
 
 def is_lamp(kanaal: str) -> bool:
-    return bool(kanaal) and kanaal[0].upper() == "Q"
+    # Q werd voor H gebruikt; oude schakelingbestanden blijven zo werken.
+    return bool(kanaal) and kanaal[0].upper() in ("H", "Q")
 
 
 def is_knop(kanaal: str) -> bool:
@@ -72,7 +73,7 @@ class KofferIO:
     """
     Knoppen- en lampenprint op hardware-adres 000.
 
-    Lampen Q1..Q8 op GPB0..GPB7, niet geinverteerd: bit hoog is lamp aan.
+    Lampen H1..H8 op GPB0..GPB7, niet geinverteerd: bit hoog is lamp aan.
     Knoppen S1..S8 op GPA0..GPA7, actief laag met externe pull-up R20.
 
     Er wordt bewust geen hardware-reset gedaan: de RESET-lijn is gedeeld met
