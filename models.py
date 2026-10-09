@@ -14,6 +14,7 @@ from constants import (
     FOUR_TERMINAL,
     LABEL_GROEP,
     LABEL_PREFIX,
+    LABEL_PREFIX_OUD,
     SINGLE_TERMINAL,
     THREE_TERMINAL,
 )
@@ -115,7 +116,7 @@ def label_groep(comp_type: str) -> str:
 
 def renumber_auto_labels(components: List["Component"]):
     """
-    Hernummer alleen standaard auto-labels zoals S1/K2/H3.
+    Hernummer alleen standaard auto-labels zoals S1/K2/Q3.
     Aangepaste labels blijven onaangeraakt.
     """
     counters = {}
@@ -142,7 +143,11 @@ def renumber_auto_labels(components: List["Component"]):
             nummer += 1
         counters[groep] = nummer
 
-        if re.fullmatch(rf"{re.escape(prefix)}\d+", comp.label or ""):
+        # Ook een label met een eerder gebruikt prefix geldt als auto-label,
+        # zodat een tekening van voor een prefixwijziging wordt meegenummerd.
+        prefixen = [prefix] + LABEL_PREFIX_OUD.get(comp.type, [])
+        if any(re.fullmatch(rf"{re.escape(p)}\d+", comp.label or "")
+               for p in prefixen):
             comp.label = f"{prefix}{nummer}"
 
 

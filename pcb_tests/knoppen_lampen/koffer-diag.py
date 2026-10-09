@@ -42,7 +42,7 @@ def main():
         print(f"  {naam:<7} = 0x{koffer._lees(reg):02X}")
 
     print("")
-    print("Lamptest: H1 tot en met H8 gaan een voor een aan.")
+    print("Lamptest: Q1 tot en met Q8 gaan een voor een aan.")
     for i in range(8):
         koffer.schrijf_lampen({i: True})
         time.sleep(0.25)

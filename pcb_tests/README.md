@@ -26,7 +26,7 @@ hoofdmap van `pcb_tests`.
 | hoofdmap | `scan.py` | Zoekt MCP23S17's op CE0, adres 0 t/m 7 |
 | hoofdmap | `test_io_board.py` | Ouder testgereedschap, zie waarschuwing hieronder |
 | `knoppen_lampen/` | `lightsout.py` | Zet de lampen op de knoppen/lampen-PCB uit |
-| `knoppen_lampen/` | `lampen-test.py` | Lampen H1..H8 los aansturen |
+| `knoppen_lampen/` | `lampen-test.py` | Lampen Q1..Q8 los aansturen |
 | `knoppen_lampen/` | `knoppen-test.py` | Knoppen S1..S8 uitlezen |
 | `knoppen_lampen/` | `semi-integratietest-knop-lamp.py` | Knop bedient de bijbehorende lamp |
 | `digitaal/` | `digital.py` | De vier 48V-uitgangskaarten per pin bedienen |
@@ -105,7 +105,7 @@ MCP23S17 op CE0, hardware-adres `000`.
 | Poort | Signaal | Richting | Werking |
 |------------|------------------|----------|-----------------------------------------|
 | GPA0..GPA7 | S1..S8, knoppen | ingang | actief laag, externe pull-up R20 (10 k) |
-| GPB0..GPB7 | H1..H8, lampen | uitgang | niet geinverteerd: pin hoog = lamp aan |
+| GPB0..GPB7 | Q1..Q8, lampen | uitgang | niet geinverteerd: pin hoog = lamp aan |
 
 De lampen hangen via een 2N7002 aan 12 V. Interne pull-ups zijn niet nodig, R20
 doet dat al; daarom staat `USE_PULLUP = False`.

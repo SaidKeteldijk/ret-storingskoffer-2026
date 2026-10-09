@@ -26,7 +26,7 @@ POLL_INTERVAL = 0.01
 DEBOUNCE_READS = 3
 
 BUTTON_NAMES = [f"S{i + 1}" for i in range(8)]
-LAMP_NAMES = [f"H{i + 1}" for i in range(8)]
+LAMP_NAMES = [f"Q{i + 1}" for i in range(8)]
 
 IODIRA = 0x00
 IODIRB = 0x01

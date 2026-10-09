@@ -33,7 +33,8 @@ from draw      import (EC_DRAW_BASE, _ec_schakelaar, _ec_schakelaar2p, _ec_spdt,
                        _ec_voeding, _ec_massa)
 from simulator import CircuitSimulator
 from gpio_manager import GPIOManager, ON_RPI, GPIO
-from koffer_io import KofferIO, SPI_AANWEZIG, is_knop, is_lamp, kanaal_index
+from koffer_io import (KofferIO, SPI_AANWEZIG, is_knop, is_lamp, kanaal_index,
+                       normaliseer_kanaal)
 
 #  GPIO CONFIGURATIE DIALOOG
 # ═══════════════════════════════════════════════
@@ -42,7 +43,7 @@ class GPIOConfigDialog(QDialog):
     Dialoog voor het koppelen van componenten aan de knoppen- en lampenprint.
 
     Schakelaars en relaiscontacten worden aan een knop S1..S8 gekoppeld,
-    lampen, motoren en relaisspoelen aan een lamp H1..H8. Het componenttype
+    lampen, motoren en relaisspoelen aan een lamp Q1..Q8. Het componenttype
     bepaalt zelf of het een ingang of een uitgang is.
     """
 
@@ -474,6 +475,7 @@ class CircuitCanvas(QWidget):
         comps = []
         for c in data.get("components", []):
             merged = {**comp_defaults, **c}
+            merged["kanaal"] = normaliseer_kanaal(merged.get("kanaal", ""))
             comps.append(Component(**merged))
         self.components = comps
         self.wires           = [Wire(**w) for w in data.get("wires", [])]
@@ -1398,7 +1400,7 @@ class GPIOMonitorPanel(QWidget):
 
         if not geconfigureerd:
             lbl = QLabel("Geen kanalen gekoppeld  ·  "
-                         "Klik ⚙ GPIO om H1..H8 en S1..S8 te koppelen")
+                         "Klik ⚙ GPIO om Q1..Q8 en S1..S8 te koppelen")
             lbl.setStyleSheet(
                 f"color:{C_MUTED}; font-family:'Courier New'; font-size:10px;")
             self._kaart_layout.insertWidget(0, lbl)
@@ -1845,7 +1847,7 @@ class MainWindow(QMainWindow):
         if koffer and koffer.actief:
             bron = "koffer verbonden" if SPI_AANWEZIG else "mockkoffer"
             tekst = f"Simulatie actief  [{bron}]"
-            tekst += chr(10) + "GPIO-knop = kanalen H1..H8 en S1..S8 koppelen"
+            tekst += chr(10) + "GPIO-knop = kanalen Q1..Q8 en S1..S8 koppelen"
         else:
             reden = koffer.fout if koffer and koffer.fout else "onbekende oorzaak"
             tekst = "Simulatie actief, maar de koffer reageert niet:"

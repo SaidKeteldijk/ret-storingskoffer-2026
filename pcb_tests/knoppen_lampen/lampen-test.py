@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-lampen-test.py - Lampen H1..H8 los aansturen.
+lampen-test.py - Lampen Q1..Q8 los aansturen.
 RET N.V. | Said Keteldijk (1045604)
 """
 
@@ -69,7 +69,7 @@ def init_lamps(mcp):
 
 
 def show_status(state):
-    lamps = "  ".join(f"H{i + 1}:{'AAN' if state & (1 << i) else 'uit'}" for i in range(8))
+    lamps = "  ".join(f"Q{i + 1}:{'AAN' if state & (1 << i) else 'uit'}" for i in range(8))
     print(f"[{state:08b}]  {lamps}")
 
 
