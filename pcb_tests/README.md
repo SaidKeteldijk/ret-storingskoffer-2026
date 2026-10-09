@@ -184,8 +184,12 @@ adressen beschikbaar:
 |-------|------------|-------|--------------------------|-------------|
 | 1 | DAC 1 (U1) | 00 | XTR117 stroomlus | 4 tot 20 mA |
 | 1 | DAC 2 (U3) | 01 | MCP6002 + 2N7002 booster | 0 tot 48 V |
-| 2 | DAC 1 (U1) | 10 | XTR117 stroomlus | 4 tot 20 mA |
-| 2 | DAC 2 (U3) | 11 | MCP6002 + 2N7002 booster | 0 tot 48 V |
+| 2 | DAC 1 (U1) | 11 | XTR117 stroomlus | 4 tot 20 mA |
+| 2 | DAC 2 (U3) | 10 | MCP6002 + 2N7002 booster | 0 tot 48 V |
+
+Het adreswoord is `(A1 << 1) | A0`. Op print 2 staan de twee DAC's in de
+omgekeerde volgorde van print 1; dat is zo gebouwd en staat zo in
+`koffer-analoog.py`. Verwissel je de printen, dan klopt de tabel niet meer.
 
 `dac-tester.py` kent alleen de adressen 00 en 01 en test dus een losse print.
 `koffer-analoog.py` kent alle vier de adressen en spreekt de uitgangen aan met

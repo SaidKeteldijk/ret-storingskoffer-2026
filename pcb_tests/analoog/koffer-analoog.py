@@ -15,9 +15,11 @@ VFS = 2.5
 
 CHANNELS = {"A": 0b00, "B": 0b01, "C": 0b10, "D": 0b11}
 
+# Adreswoord van de DAC8564 is (A1 << 1) | A0. De volgorde op print 2 is
+# omgekeerd aan die op print 1, zoals de printen gebouwd zijn.
 ADRESSEN = {
     1: {"stroom": 0b00, "spanning": 0b01},
-    2: {"stroom": 0b10, "spanning": 0b11},
+    2: {"stroom": 0b11, "spanning": 0b10},
 }
 
 SPANNING = {"soort": "spanning", "unit": "V", "min": 0.0, "max": 48.0,
