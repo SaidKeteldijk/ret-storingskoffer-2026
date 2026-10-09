@@ -6,8 +6,10 @@ Alle functies tekenen gecentreerd op (0,0); de canvas past translate en
 rotate toe voor de aanroep.
 """
 
+import math
+
 from PyQt5.QtGui import QBrush, QColor, QFont, QPainter, QPen
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QRectF, Qt
 
 from constants import (
     C_GREEN,
@@ -34,6 +36,37 @@ from constants import (
 )
 
 
+def _draaihoek(p) -> float:
+    """De rotatie die op dit moment in de transformatie van de painter zit."""
+    t = p.transform()
+    return math.degrees(math.atan2(t.m12(), t.m11()))
+
+
+def _tekst(p, x, y, inhoud):
+    """
+    Zet tekst horizontaal neer, ook als het symbool gedraaid staat.
+
+    Het anker (x, y) ligt in het assenstelsel van het symbool, zodat de tekst
+    met het symbool meedraait van plaats. De rotatie wordt er vlak voor het
+    tekenen weer uitgehaald, waardoor componentnummers en contactnummers
+    altijd leesbaar blijven. De tekst wordt op het anker gecentreerd.
+    """
+    inhoud = "" if inhoud is None else str(inhoud)
+    if not inhoud:
+        return
+    p.save()
+    p.translate(x, y)
+    p.rotate(-_draaihoek(p))
+    vak = QRectF(-150, -60, 300, 120)
+    p.drawText(vak, Qt.AlignCenter | Qt.TextDontClip, inhoud)
+    p.restore()
+
+
+def _zijkant(x, afstand):
+    """Anker op afstand van een aansluitpunt, aan de kant waar het punt ligt."""
+    return x + afstand if x > 0 else x - afstand
+
+
 def _ec_schakelaar(p, label, cs, gesloten=False):
     kleur = C_GREEN
     p.setPen(QPen(QColor(kleur), 2))
@@ -49,10 +82,10 @@ def _ec_schakelaar(p, label, cs, gesloten=False):
     p.setBrush(QBrush(Qt.transparent))
     p.setPen(QColor(kleur))
     p.setFont(QFont("Courier New", 9, QFont.Bold))
-    p.drawText(-len(label) * 3, -12, label)
+    _tekst(p, 0, -17, label)
     p.setFont(QFont("Courier New", 12))
-    p.drawText(-CONN + 2, 10, str(cs))
-    p.drawText(CONN - 10, 10, str(cs + 1))
+    _tekst(p, -CONN + 7, 22, cs)
+    _tekst(p, CONN - 7, 22, cs + 1)
 
 
 def _ec_schakelaar2p(p, label, cs, gesloten=False, nc=False):
@@ -79,16 +112,16 @@ def _ec_schakelaar2p(p, label, cs, gesloten=False, nc=False):
         p.setBrush(QBrush(Qt.transparent))
         p.setPen(QColor(kleur))
         p.setFont(QFont("Courier New", 12))
-        p.drawText(-CONN + 2, y - 6, str(cs + ci))
-        p.drawText(CONN - 10, y - 6, str(cs + ci + 1))
+        _tekst(p, -CONN + 7, y - 22, cs + ci)
+        _tekst(p, CONN - 7, y - 22, cs + ci + 1)
     p.setPen(QPen(QColor(kleur), 1, Qt.DashLine))
     p.drawLine(0, -CONN - 7, 0, CONN - 7)
     p.setPen(QColor(kleur))
     p.setFont(QFont("Courier New", 9, QFont.Bold))
-    p.drawText(-len(label) * 3, -CONN - 12, label)
+    _tekst(p, 0, -CONN - 17, label)
     badge = "NC" if nc else "NO"
     p.setFont(QFont("Courier New", 14))
-    p.drawText(CONN + 4, 4, badge)
+    _tekst(p, CONN + 16, 0, badge)
 
 
 def _towards_zero(value, offset):
@@ -147,17 +180,20 @@ def _ec_spdt(p, label, cs, positie_c=False, flipped=False):
 
     p.setPen(QColor(kleur))
     p.setFont(QFont("Courier New", 14))
-    p.drawText(_side_text_x(a_x, rc + 2, rc + 10), a_y + 4, "A")
-    p.drawText(_side_text_x(b_x, rc + 2, rc + 10), b_y + 4, "B")
-    p.drawText(_side_text_x(com_x, rc + 2, rc + 22), com_y + 4, "COM")
+    _tekst(p, _zijkant(a_x, rc + 13), a_y, "A")
+    _tekst(p, _zijkant(b_x, rc + 13), b_y, "B")
+    # Naast de aansluitdraad van COM, anders loopt de draad door de tekst.
+    _tekst(p, _zijkant(com_x, rc + 22), com_y + 26, "COM")
 
     p.setFont(QFont("Courier New", 9, QFont.Bold))
-    p.drawText(-len(label) * 3, -CONN - 8, label)
+    _tekst(p, 0, -CONN - 22, label)
 
     p.setFont(QFont("Courier New", 12))
-    p.drawText(_side_text_x(com_x, rc + 2, rc + 12), com_y - rc - 2, str(cs))
-    p.drawText(_side_text_x(a_x, rc + 2, rc + 12), a_y - rc - 2, str(cs + 1))
-    p.drawText(_side_text_x(b_x, rc + 2, rc + 12), b_y - rc - 2, str(cs + 2))
+    # Naast de letter van het aansluitpunt, weg van het midden van het
+    # symbool, zodat nummer en letter elkaar niet raken.
+    _tekst(p, com_x, com_y - 26, cs)
+    _tekst(p, a_x, _zijkant(a_y, 26), cs + 1)
+    _tekst(p, b_x, _zijkant(b_y, 26), cs + 2)
 
 
 def _ec_rspdt(p, label, cs, positie_c=False, flipped=False):
@@ -168,27 +204,26 @@ def _ec_relaisspoel(p, label, cs, actief=False):
     kleur = C_YELLOW if actief else C_PEACH
     tekst = label if label else "K"
 
+    # De spoel is een staand kader. De breedte groeit mee met het label, zodat
+    # een horizontaal gezet label er altijd in past.
     p.setFont(QFont("Courier New", 9, QFont.Bold))
     fm = p.fontMetrics()
-    body_w = max(44, fm.horizontalAdvance(tekst) + 14)
-    body_w = min(body_w, CONN * 2 - 16)
-    body_h = 22
-    half_w = body_w // 2
-    half_h = body_h // 2
+    breedte = max(22, min(fm.horizontalAdvance(tekst) + 10, CONN * 2 - 16))
+    hoogte = 44
+    half_b = breedte // 2
+    half_h = hoogte // 2
 
     p.setPen(QPen(QColor(kleur), 2))
     p.setBrush(QBrush(QColor(kleur + "33") if actief else Qt.transparent))
-    p.drawLine(-CONN, 0, -half_h, 0)
-    p.drawLine(half_h, 0, CONN, 0)
-    p.save()
-    p.rotate(270)
-    p.drawRect(-half_w, -half_h, body_w, body_h)
+    p.drawLine(-CONN, 0, -half_b, 0)
+    p.drawLine(half_b, 0, CONN, 0)
+    p.drawRect(-half_b, -half_h, breedte, hoogte)
+    p.setBrush(QBrush(Qt.transparent))
     p.setPen(QColor(kleur))
-    p.drawText(-half_w, -half_h, body_w, body_h, Qt.AlignCenter, tekst)
-    p.restore()
+    _tekst(p, 0, 0, tekst)
     p.setFont(QFont("Courier New", 12))
-    p.drawText(-CONN + 2, 10, str(cs))
-    p.drawText(CONN - 10, 10, str(cs + 1))
+    _tekst(p, -CONN + 7, 22, cs)
+    _tekst(p, CONN - 7, 22, cs + 1)
 
 
 def _ec_relaiscontact(p, label, cs, gesloten=False):
@@ -206,10 +241,10 @@ def _ec_relaiscontact(p, label, cs, gesloten=False):
     p.setBrush(QBrush(Qt.transparent))
     p.setPen(QColor(kleur))
     p.setFont(QFont("Courier New", 9, QFont.Bold))
-    p.drawText(-len(label) * 3, -12, label)
+    _tekst(p, 0, -17, label)
     p.setFont(QFont("Courier New", 12))
-    p.drawText(-CONN + 2, 10, str(cs))
-    p.drawText(CONN - 10, 10, str(cs + 1))
+    _tekst(p, -CONN + 7, 22, cs)
+    _tekst(p, CONN - 7, 22, cs + 1)
 
 
 def _ec_motor(p, label, cs, actief=False):
@@ -221,10 +256,10 @@ def _ec_motor(p, label, cs, actief=False):
     p.drawEllipse(-11, -11, 22, 22)
     p.setPen(QColor(kleur))
     p.setFont(QFont("Courier New", 10, QFont.Bold))
-    p.drawText(-5, 4, label if label else "M")
+    _tekst(p, 0, 0, label if label else "M")
     p.setFont(QFont("Courier New", 12))
-    p.drawText(-CONN + 2, 14, str(cs))
-    p.drawText(CONN - 10, 14, str(cs + 1))
+    _tekst(p, -CONN + 7, 22, cs)
+    _tekst(p, CONN - 7, 22, cs + 1)
 
 
 def _ec_lamp(p, label, cs, actief=False):
@@ -239,10 +274,10 @@ def _ec_lamp(p, label, cs, actief=False):
         p.drawLine(4, -4, -4, 4)
     p.setPen(QColor(kleur))
     p.setFont(QFont("Courier New", 9, QFont.Bold))
-    p.drawText(-len(label) * 3, -10, label)
+    _tekst(p, 0, -15, label)
     p.setFont(QFont("Courier New", 12))
-    p.drawText(-CONN + 2, 14, str(cs))
-    p.drawText(CONN - 10, 14, str(cs + 1))
+    _tekst(p, -CONN + 7, 22, cs)
+    _tekst(p, CONN - 7, 22, cs + 1)
 
 
 def _ec_voeding(p, label, cs):
@@ -255,7 +290,7 @@ def _ec_voeding(p, label, cs):
     p.drawLine(0, 4, 0, 16)
     p.setPen(QColor(kleur))
     p.setFont(QFont("Courier New", 9, QFont.Bold))
-    p.drawText(-20, -8, label if label else "+24VDC")
+    _tekst(p, 0, -26, label if label else "+24VDC")
 
 
 def _ec_massa(p, label, cs):
@@ -269,7 +304,7 @@ def _ec_massa(p, label, cs):
     p.drawLine(-3, 16, 3, 16)
     p.setPen(QColor(kleur))
     p.setFont(QFont("Courier New", 9))
-    p.drawText(-12, -8, label if label else "GND")
+    _tekst(p, 0, -26, label if label else "GND")
 
 
 def _ec_netlabel(p, label, cs):
@@ -285,7 +320,7 @@ def _ec_netlabel(p, label, cs):
 
     p.setPen(QColor(kleur))
     p.setFont(QFont("Courier New", 9, QFont.Bold))
-    p.drawText(20, 5, tekst)
+    _tekst(p, 14 + max(34, len(tekst) * 8 + 10) / 2, 0, tekst)
 
 
 EC_DRAW_BASE = {
