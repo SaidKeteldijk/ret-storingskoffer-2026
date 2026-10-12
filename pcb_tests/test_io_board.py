@@ -46,12 +46,6 @@ class Bus:
         return self.spi.xfer2([0x41 | (addr << 1), reg, 0x00])[2]
 
     def init_haen(self):
-        """Zet HAEN aan op alle kaarten tegelijk.
-
-        Na een reset staat HAEN uit en luistert elke MCP naar elk adres, dus
-        deze ene schrijfactie op adres 0 bereikt de hele keten. Daarna
-        reageert elke kaart alleen nog op zijn eigen DIP-stand.
-        """
         self.write(0, IOCON, IOCON_MIRROR | IOCON_HAEN | IOCON_ODR)
 
     def close(self):
@@ -60,7 +54,6 @@ class Bus:
 
 
 def scan(bus):
-    """Zoekt kaarten door een testpatroon in DEFVALA te schrijven en terug te lezen."""
     gevonden = []
     for addr in range(8):
         ok = True

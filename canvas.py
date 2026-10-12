@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
     QPushButton, QLabel, QFrame, QFileDialog, QInputDialog,
     QMessageBox, QStackedWidget, QScrollArea, QDialog,
-    QTableWidget, QTableWidgetItem, QComboBox, QSpinBox,
+    QTableWidget, QTableWidgetItem, QComboBox, QSpinBox, QDoubleSpinBox,
     QDialogButtonBox, QHeaderView, QCheckBox,
 )
 from PyQt5.QtGui  import QPainter, QPen, QFont, QColor, QBrush
@@ -33,26 +33,30 @@ from draw      import (EC_DRAW_BASE, _ec_schakelaar, _ec_schakelaar2p, _ec_spdt,
                        _ec_voeding, _ec_massa)
 from simulator import CircuitSimulator
 from gpio_manager import GPIOManager, ON_RPI, GPIO
-from koffer_io import (KofferIO, SPI_AANWEZIG, is_knop, is_lamp, kanaal_index,
-                       normaliseer_kanaal)
+from koffer_io import (KofferIO, SPI_AANWEZIG, is_knop, is_lamp, is_spanning,
+                       kanaal_index, normaliseer_kanaal)
+from koffer_dac import KofferDAC
 
 #  GPIO CONFIGURATIE DIALOOG
 # ═══════════════════════════════════════════════
 class GPIOConfigDialog(QDialog):
     """
-    Dialoog voor het koppelen van componenten aan de knoppen- en lampenprint.
+    Dialoog voor het koppelen van componenten aan de koffer.
 
-    Schakelaars en relaiscontacten worden aan een knop S1..S8 gekoppeld,
-    lampen, motoren en relaisspoelen aan een lamp Q1..Q8. Het componenttype
-    bepaalt zelf of het een ingang of een uitgang is.
+    Drie soorten kanalen. Schakelaars en relaiscontacten gaan naar een knop
+    S1..S8, lampen, motoren en relaisspoelen naar een lamp Q1..Q8, en elk
+    component kan als meetpunt aan een spanningsklem U1..U8 gekoppeld worden.
+    Bij een meetpunt horen twee spanningen: de waarde als er spanning op het
+    punt staat, en de waarde die de klem geeft als het meetpunt als storing is
+    aangemerkt. Staat er geen spanning op het punt, dan geeft de klem 0 V.
     """
 
     KANAAL_GEEN = "— geen —"
 
     def __init__(self, components: List[Component], parent=None):
         super().__init__(parent)
-        self.setWindowTitle("GPIO Koppeling configureren")
-        self.setMinimumWidth(520)
+        self.setWindowTitle("Koppeling met de koffer")
+        self.setMinimumWidth(820)
         self.setStyleSheet(f"""
             QDialog, QWidget {{ background:{C_BG}; color:{C_TEXT}; }}
             QTableWidget {{ gridline-color:{C_BORDER}; border:1px solid {C_BORDER};
@@ -65,16 +69,18 @@ class GPIOConfigDialog(QDialog):
                          border:1px solid {C_BORDER}; border-radius:3px;
                          padding:2px 6px; font-family:'Courier New'; }}
             QComboBox QAbstractItemView {{ background:{C_SIDE}; color:{C_TEXT}; }}
+            QDoubleSpinBox {{ background:{C_SIDE}; color:{C_TEXT};
+                              border:1px solid {C_BORDER}; border-radius:3px;
+                              padding:2px 4px; font-family:'Courier New'; }}
+            QDoubleSpinBox:disabled {{ color:{C_BORDER}; }}
             QPushButton {{ background:{C_BG}; color:{C_TEXT};
                            border:1px solid {C_BORDER}; border-radius:4px;
                            padding:6px 14px; font-family:'Courier New'; }}
             QPushButton:hover {{ background:{C_BORDER}; }}
         """)
 
-        # Filter: alleen koppelbare componenten
         self.comp_indices = [
-            i for i, c in enumerate(components)
-            if c.type in (GPIO_IN_TYPES | GPIO_OUT_TYPES)
+            i for i, c in enumerate(components) if c.type in GPIO_MEET_TYPES
         ]
         self.components = components
 
@@ -82,46 +88,49 @@ class GPIOConfigDialog(QDialog):
         layout.setSpacing(10)
         layout.setContentsMargins(16, 16, 16, 12)
 
-        # Info
         info = QLabel(
-            f"{'✓  RPi.GPIO hardware actief' if ON_RPI else '⚠  MockGPIO actief (geen hardware)'}\n"
-            "Koppel hieronder elk component aan een BCM GPIO-pinnummer."
+            ("✓  SPI actief" if SPI_AANWEZIG
+             else "⚠  Mockkoffer actief (geen hardware)")
+            + chr(10)
+            + "S1..S8 zijn de knoppen, Q1..Q8 de lampen, U1..U8 de spanningsklemmen."
+            + chr(10)
+            + "Een meetpunt meet op het eerste aansluitpunt van het component; "
+              "dat punt staat in de tekening met een stip aangegeven."
         )
         info.setStyleSheet(
-            f"color:{'#a6e3a1' if ON_RPI else C_YELLOW}; "
+            f"color:{'#a6e3a1' if SPI_AANWEZIG else C_YELLOW}; "
             f"font-family:'Courier New'; font-size:10px;")
         layout.addWidget(info)
 
-        # Tabel
-        self.table = QTableWidget(len(self.comp_indices), 4)
+        self.table = QTableWidget(len(self.comp_indices), 6)
         self.table.setHorizontalHeaderLabels(
-            ["Component", "Type", "Soort", "Kanaal op de koffer"])
+            ["Component", "Type", "Soort", "Kanaal op de koffer",
+             "Spanning aan", "Bij storing"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionMode(QTableWidget.NoSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
         self._kanaal_combos: Dict[int, QComboBox] = {}
+        self._aan_spins:     Dict[int, QDoubleSpinBox] = {}
+        self._storing_spins: Dict[int, QDoubleSpinBox] = {}
 
         for row, ci in enumerate(self.comp_indices):
             comp = components[ci]
+            opties = self._opties(comp)
 
-            # Label
             lbl = QTableWidgetItem(comp.label or comp.type)
             lbl.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 0, lbl)
 
-            # Type
             tp = QTableWidgetItem(comp.type)
             tp.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 1, tp)
 
-            ingang = comp.type in GPIO_IN_TYPES
-            soort = QTableWidgetItem("Knop" if ingang else "Lamp")
+            soort = QTableWidgetItem("")
             soort.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 2, soort)
 
-            opties = KOFFER_KNOPPEN if ingang else KOFFER_LAMPEN
             kanaal_cb = QComboBox()
             kanaal_cb.addItems([self.KANAAL_GEEN] + opties)
             if comp.kanaal in opties:
@@ -131,9 +140,21 @@ class GPIOConfigDialog(QDialog):
             self.table.setCellWidget(row, 3, kanaal_cb)
             self._kanaal_combos[ci] = kanaal_cb
 
+            aan = self._spin(getattr(comp, "spanning_aan", SPANNING_AAN_STANDAARD))
+            self.table.setCellWidget(row, 4, aan)
+            self._aan_spins[ci] = aan
+
+            storing = self._spin(
+                getattr(comp, "spanning_storing", SPANNING_STORING_STANDAARD))
+            self.table.setCellWidget(row, 5, storing)
+            self._storing_spins[ci] = storing
+
+            kanaal_cb.currentTextChanged.connect(
+                lambda _t, r=row, i=ci: self._werk_rij_bij(r, i))
+            self._werk_rij_bij(row, ci)
+
         layout.addWidget(self.table)
 
-        # Buttons
         btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         btns.accepted.connect(self.accept)
         btns.rejected.connect(self.reject)
@@ -142,6 +163,41 @@ class GPIOConfigDialog(QDialog):
             f"border:1px solid {C_BORDER}; border-radius:4px; padding:6px 18px; }}"
             f"QPushButton:hover {{ background:{C_BORDER}; }}")
         layout.addWidget(btns)
+
+    @staticmethod
+    def _opties(comp: Component) -> List[str]:
+        """Elk component mag meetpunt zijn; knop of lamp hangt van het type af."""
+        if comp.type in GPIO_IN_TYPES:
+            return KOFFER_KNOPPEN + KOFFER_SPANNINGEN
+        if comp.type in GPIO_OUT_TYPES:
+            return KOFFER_LAMPEN + KOFFER_SPANNINGEN
+        return list(KOFFER_SPANNINGEN)
+
+    @staticmethod
+    def _spin(waarde: float) -> QDoubleSpinBox:
+        sp = QDoubleSpinBox()
+        sp.setRange(0.0, SPANNING_MAX)
+        sp.setDecimals(1)
+        sp.setSingleStep(0.5)
+        sp.setSuffix(" V")
+        sp.setValue(float(waarde))
+        return sp
+
+    def _werk_rij_bij(self, row: int, ci: int):
+        """Zet de soort in de tabel en zet de spanningsvelden aan of uit."""
+        kanaal = self._kanaal_combos[ci].currentText()
+        meet = is_spanning(kanaal)
+        if kanaal == self.KANAAL_GEEN:
+            soort = "—"
+        elif meet:
+            soort = "Meetpunt"
+        elif is_knop(kanaal):
+            soort = "Knop"
+        else:
+            soort = "Lamp"
+        self.table.item(row, 2).setText(soort)
+        self._aan_spins[ci].setEnabled(meet)
+        self._storing_spins[ci].setEnabled(meet)
 
     def accept(self):
         """Weiger het sluiten zolang twee componenten hetzelfde kanaal delen."""
@@ -167,11 +223,10 @@ class GPIOConfigDialog(QDialog):
             comp = self.components[ci]
             kanaal = self._kanaal_combos[ci].currentText()
             comp.kanaal = "" if kanaal == self.KANAAL_GEEN else kanaal
-            comp.gpio_dir = "IN" if comp.type in GPIO_IN_TYPES else "OUT"
+            comp.gpio_dir = "IN" if is_knop(comp.kanaal) else "OUT"
             comp.gpio_pin = -1
-
-
-
+            comp.spanning_aan     = round(self._aan_spins[ci].value(), 1)
+            comp.spanning_storing = round(self._storing_spins[ci].value(), 1)
 
 
 # ═══════════════════════════════════════════════
@@ -223,10 +278,11 @@ class FaultConfigDialog(QDialog):
             QPushButton:hover {{ background:{C_BORDER}; }}
         """)
 
-        # Alleen componenten die een zinvolle storing kunnen hebben
+        # Componenten met een zinvolle storing, plus elk meetpunt: daar is
+        # de storing een afwijkende spanning op de klem.
         self.comp_indices = [
             i for i, c in enumerate(components)
-            if c.type in self._FAULT_TYPES
+            if c.type in self._FAULT_TYPES or is_spanning(c.kanaal)
         ]
         self.components = components
 
@@ -263,7 +319,13 @@ class FaultConfigDialog(QDialog):
             tp.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 1, tp)
 
-            desc = QTableWidgetItem(self._FAULT_TYPES.get(comp.type, "—"))
+            if is_spanning(comp.kanaal):
+                volt = getattr(comp, "spanning_storing",
+                               SPANNING_STORING_STANDAARD)
+                omschrijving = f"Klem {comp.kanaal} geeft {volt:.1f} V"
+            else:
+                omschrijving = self._FAULT_TYPES.get(comp.type, "—")
+            desc = QTableWidgetItem(omschrijving)
             desc.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 2, desc)
 
@@ -351,6 +413,7 @@ class CircuitCanvas(QWidget):
         # Twee managers op dezelfde pinnen botsen; het monteursscherm krijgt er geen.
         self.gpio_mgr = GPIOManager() if gpio else None
         self.koffer = KofferIO() if gpio else None
+        self.dac = KofferDAC() if gpio else None
         self._gpio_timer = QTimer(self)
         self._gpio_timer.setInterval(50)
         self._gpio_timer.timeout.connect(self._gpio_poll)
@@ -368,21 +431,31 @@ class CircuitCanvas(QWidget):
         self.mode = mode
         if mode == "sim":
             self.sim.load(self.components, self.wires)
+            # Een relaiscontact aan een knop volgt die knop en niet zijn
+            # spoel. Meteen vastleggen, zodat dat al vanaf de rusttoestand
+            # geldt en niet pas na de eerste druk.
+            self.sim.hand_bediend = {
+                i for i, c in enumerate(self.components) if is_knop(c.kanaal)
+            }
             if self.koffer:
                 self.koffer.init()
                 gekoppeld = [f"{c.kanaal}={c.label or c.type}"
                              for c in self.components if c.kanaal]
                 print("[KOFFER] gekoppeld: "
                       + (", ".join(gekoppeld) if gekoppeld else "NIETS"))
+            if self.dac and any(is_spanning(c.kanaal) for c in self.components):
+                self.dac.init()
             if self.gpio_mgr:
                 self.gpio_mgr.configure_pins(self.components)
-            if self.koffer or self.gpio_mgr:
+            if self.koffer or self.gpio_mgr or (self.dac and self.dac.actief):
                 self._gpio_timer.start()
         else:
             self._gpio_timer.stop()
             if prev == "sim":
                 if self.koffer:
                     self.koffer.cleanup()
+                if self.dac and self.dac.actief:
+                    self.dac.cleanup()
                 if self.gpio_mgr:
                     self.gpio_mgr.cleanup()
         self.wire_start = None
@@ -436,6 +509,9 @@ class CircuitCanvas(QWidget):
                         standen[k] = active.get(i, False)
             self.koffer.schrijf_lampen(standen)
 
+        if self.dac and self.dac.actief:
+            self.dac.schrijf(self._meetspanningen())
+
         if self.gpio_mgr:
             self.gpio_mgr.write_outputs(self.components, active)
 
@@ -444,6 +520,35 @@ class CircuitCanvas(QWidget):
 
         if changed:
             self.update()
+
+    def _meetspanningen(self) -> Dict[int, float]:
+        """
+        De spanning per klem U1..U8.
+
+        Een meetpunt kijkt naar het eerste aansluitpunt van het component.
+        Staat daar geen spanning op, dan geeft de klem 0 V. Staat er wel
+        spanning op, dan de ingestelde waarde, of de storingswaarde als het
+        meetpunt als defect is aangemerkt. Dat laatste blijft ook tijdens het
+        examen staan: de afwijkende spanning is juist het verschijnsel dat de
+        monteur moet opmeten.
+        """
+        waarden: Dict[int, float] = {}
+        for comp in self.components:
+            if not is_spanning(comp.kanaal):
+                continue
+            k = kanaal_index(comp.kanaal)
+            punten = comp_connections(comp)
+            if k < 0 or not punten:
+                continue
+            if not self.sim.node_is_live(punten[0]):
+                waarden[k] = 0.0
+            elif getattr(comp, 'defect', False):
+                waarden[k] = float(getattr(comp, 'spanning_storing',
+                                           SPANNING_STORING_STANDAARD))
+            else:
+                waarden[k] = float(getattr(comp, 'spanning_aan',
+                                           SPANNING_AAN_STANDAARD))
+        return waarden
 
     def open_fault_dialog(self):
         """Open het storingen-configuratievenster."""
@@ -471,7 +576,9 @@ class CircuitCanvas(QWidget):
         comp_defaults = {"label": "", "rotation": 0, "contact_start": 1,
                          "manual_contact_start": False,
                          "gpio_pin": -1, "gpio_dir": "IN", "kanaal": "",
-                         "defect": False, "manual_label": False}
+                         "defect": False, "manual_label": False,
+                         "spanning_aan": SPANNING_AAN_STANDAARD,
+                         "spanning_storing": SPANNING_STORING_STANDAARD}
         comps = []
         for c in data.get("components", []):
             merged = {**comp_defaults, **c}
@@ -946,8 +1053,12 @@ class CircuitCanvas(QWidget):
             # Verborgen tijdens examen zodat de monteur ze zelf moet vinden.
             if getattr(comp, 'defect', False) and self.mode in ("edit", "sim") and not self.exam_active:
                 self._draw_defect_overlay(p, cx, cy)
-            # GPIO pin badge (buiten rotatie, altijd leesbaar)
-            if (comp.kanaal or comp.gpio_pin >= 0) and self.mode in ("sim", "edit"):
+            # Meetklem hoort bij de schakeling en wordt in elke modus
+            # getekend, ook op het monteursscherm. Het badge voor een knop of
+            # lamp is alleen voor de instructeur bedoeld.
+            if is_spanning(comp.kanaal):
+                self._draw_meetklem(p, comp)
+            elif (comp.kanaal or comp.gpio_pin >= 0) and self.mode in ("sim", "edit"):
                 self._draw_gpio_badge(p, cx, cy, comp)
 
     def _draw_gpio_badge(self, p, cx, cy, comp):
@@ -963,6 +1074,40 @@ class CircuitCanvas(QWidget):
         p.setBrush(QBrush(QColor(dir_k + "44")))
         p.drawRoundedRect(bx, by, tw + 8, 14, 3, 3)
         p.setPen(QColor(dir_k))
+        p.drawText(bx + 4, by + 11, txt)
+
+    def _draw_meetklem(self, p, comp):
+        """
+        Klemnummer bij een meetpunt, met een stip op het gemeten punt.
+
+        De stip is nodig omdat een component meer dan een aansluitpunt kan
+        hebben; gemeten wordt er altijd op het eerste. Tijdens de simulatie
+        staat de spanning erbij, maar alleen op het instructeursscherm.
+        """
+        punten = comp_connections(comp)
+        if not punten:
+            return
+        mx, my = self._px(*punten[0])
+
+        txt = comp.kanaal
+        if self.mode == "sim":
+            volt = self._meetspanningen().get(kanaal_index(comp.kanaal))
+            if volt is not None:
+                txt = f"{comp.kanaal}  {volt:.1f}V"
+
+        p.setPen(QPen(QColor(C_SKY), 2))
+        p.setBrush(QBrush(QColor(C_SKY)))
+        p.drawEllipse(mx - 4, my - 4, 8, 8)
+
+        p.setFont(QFont("Courier New", 8, QFont.Bold))
+        fm = p.fontMetrics()
+        bw = fm.horizontalAdvance(txt) + 8
+        bx = mx + 9
+        by = my + 5
+        p.setPen(QPen(QColor(C_SKY), 1))
+        p.setBrush(QBrush(QColor(C_BG)))
+        p.drawRoundedRect(bx, by, bw, 15, 3, 3)
+        p.setPen(QColor(C_SKY))
         p.drawText(bx + 4, by + 11, txt)
 
     def _draw_defect_overlay(self, p, cx, cy):
@@ -988,7 +1133,7 @@ class CircuitCanvas(QWidget):
             active    = self.sim.comp_is_active(idx)
             closed    = self.sim.switch_closed(idx)
             energized = self.sim.coil_energized(l)
-            rc_closed = self.sim.contact_closed(l)
+            rc_closed = self.sim.contact_stand(idx)
 
             # Examen: defecte loads zijn visueel inactief (storing verborgen).
             # - LAMP/MOTOR: gaat niet aan ook al staat er spanning op.
@@ -1279,9 +1424,10 @@ class GPIOMonitorPanel(QWidget):
     Onderste rij  : op MockGPIO: toggle-knoppen voor INPUT-pins (test)
     """
 
-    def __init__(self, koffer, on_mock_toggle, parent=None):
+    def __init__(self, koffer, on_mock_toggle, dac=None, parent=None):
         super().__init__(parent)
         self.koffer         = koffer
+        self.dac            = dac
         self.on_mock_toggle = on_mock_toggle   # callback(pin)
         self._components: List[Component] = []
         self._kaartjes: Dict[str, dict]   = {}  # pin → {frame, lbl_state, lbl_comp}
@@ -1358,8 +1504,13 @@ class GPIOMonitorPanel(QWidget):
         fl.addWidget(lbl_state)
 
         # Component-label + richting
-        dir_kleur = C_GREEN if is_knop(kanaal) else C_PEACH
-        lbl_comp = QLabel(f"{comp.label}  [{'knop' if is_knop(kanaal) else 'lamp'}]")
+        if is_spanning(kanaal):
+            dir_kleur, soort = C_SKY, "meetpunt"
+        elif is_knop(kanaal):
+            dir_kleur, soort = C_GREEN, "knop"
+        else:
+            dir_kleur, soort = C_PEACH, "lamp"
+        lbl_comp = QLabel(f"{comp.label}  [{soort}]")
         lbl_comp.setAlignment(Qt.AlignCenter)
         lbl_comp.setStyleSheet(
             f"color:{dir_kleur}; font-family:'Courier New'; font-size:8px;")
@@ -1400,7 +1551,7 @@ class GPIOMonitorPanel(QWidget):
 
         if not geconfigureerd:
             lbl = QLabel("Geen kanalen gekoppeld  ·  "
-                         "Klik ⚙ GPIO om Q1..Q8 en S1..S8 te koppelen")
+                         "Klik ⚙ GPIO om S1..S8, Q1..Q8 en U1..U8 te koppelen")
             lbl.setStyleSheet(
                 f"color:{C_MUTED}; font-family:'Courier New'; font-size:10px;")
             self._kaart_layout.insertWidget(0, lbl)
@@ -1416,7 +1567,9 @@ class GPIOMonitorPanel(QWidget):
 
         n_knop = sum(1 for _, c in geconfigureerd if is_knop(c.kanaal))
         n_lamp = sum(1 for _, c in geconfigureerd if is_lamp(c.kanaal))
-        self.lbl_sum.setText(f"{n_knop} knoppen  |  {n_lamp} lampen")
+        n_meet = sum(1 for _, c in geconfigureerd if is_spanning(c.kanaal))
+        self.lbl_sum.setText(
+            f"{n_knop} knoppen  |  {n_lamp} lampen  |  {n_meet} meetpunten")
 
     def update_states(self, components: List[Component]):
         """Ververs de kaartjes op basis van de actuele stand van de koffer."""
@@ -1425,6 +1578,7 @@ class GPIOMonitorPanel(QWidget):
 
         knoppen = self.koffer.lees_knoppen()
         lampen = self.koffer.lamp_standen()
+        spanningen = self.dac.standen() if self.dac and self.dac.actief else {}
 
         for comp in components:
             kaartje = self._kaartjes.get(comp.kanaal)
@@ -1434,9 +1588,16 @@ class GPIOMonitorPanel(QWidget):
             if i < 0:
                 continue
 
-            aan = knoppen.get(i, False) if is_knop(comp.kanaal) else lampen.get(i, False)
-            kleur = C_GREEN if aan else C_RED
-            kaartje["lbl_state"].setText("AAN" if aan else "UIT")
+            if is_spanning(comp.kanaal):
+                volt = spanningen.get(i, 0.0)
+                aan = volt > 0.05
+                kleur = C_SKY if aan else C_RED
+                kaartje["lbl_state"].setText(f"{volt:.1f}V")
+            else:
+                aan = (knoppen.get(i, False) if is_knop(comp.kanaal)
+                       else lampen.get(i, False))
+                kleur = C_GREEN if aan else C_RED
+                kaartje["lbl_state"].setText("AAN" if aan else "UIT")
             kaartje["lbl_state"].setStyleSheet(
                 f"color:{kleur}; font-family:'Courier New'; font-size:11px; "
                 f"font-weight:bold; background:{kleur}22; "
@@ -1705,6 +1866,7 @@ class MainWindow(QMainWindow):
         self.gpio_monitor = GPIOMonitorPanel(
             koffer          = self.canvas.koffer,
             on_mock_toggle  = self._mock_toggle,
+            dac             = self.canvas.dac,
         )
         self.gpio_monitor.setVisible(False)
         rl.addWidget(self.gpio_monitor)
@@ -2257,6 +2419,8 @@ class MainWindow(QMainWindow):
         self.canvas.set_mode("view")
         if self.canvas.koffer:
             self.canvas.koffer.cleanup()
+        if self.canvas.dac and self.canvas.dac.actief:
+            self.canvas.dac.cleanup()
         if self.canvas.gpio_mgr:
             self.canvas.gpio_mgr.cleanup()
 
@@ -2288,6 +2452,8 @@ class MainWindow(QMainWindow):
             self.canvas.exam_active = False
         if self.canvas.koffer:
             self.canvas.koffer.cleanup()
+        if self.canvas.dac and self.canvas.dac.actief:
+            self.canvas.dac.cleanup()
         if self.canvas.gpio_mgr:
             self.canvas.gpio_mgr.cleanup()
         self.canvas._gpio_timer.stop()

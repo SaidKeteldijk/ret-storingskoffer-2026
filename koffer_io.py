@@ -73,6 +73,10 @@ def is_lamp(kanaal: str) -> bool:
     return bool(kanaal) and kanaal[0].upper() in ("Q", "H")
 
 
+def is_spanning(kanaal: str) -> bool:
+    return bool(kanaal) and kanaal[0].upper() == "U"
+
+
 def is_knop(kanaal: str) -> bool:
     return bool(kanaal) and kanaal[0].upper() == "S"
 

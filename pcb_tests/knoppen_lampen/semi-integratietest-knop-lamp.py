@@ -86,7 +86,6 @@ def init_mcp(mcp):
 
 
 def read_buttons(mcp):
-    """Geeft een debounced masker van ingedrukte knoppen (1 = ingedrukt)."""
     last = mcp.read(GPIOA)
     count = 1
     while count < DEBOUNCE_READS:

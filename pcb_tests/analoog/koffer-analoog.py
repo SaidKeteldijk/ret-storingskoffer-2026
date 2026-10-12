@@ -15,8 +15,6 @@ VFS = 2.5
 
 CHANNELS = {"A": 0b00, "B": 0b01, "C": 0b10, "D": 0b11}
 
-# Adreswoord van de DAC8564 is (A1 << 1) | A0. De volgorde op print 2 is
-# omgekeerd aan die op print 1, zoals de printen gebouwd zijn.
 ADRESSEN = {
     1: {"stroom": 0b00, "spanning": 0b01},
     2: {"stroom": 0b11, "spanning": 0b10},
@@ -49,7 +47,6 @@ class DAC8564:
         self.address = address & 0x03
 
     def write_code(self, channel, code):
-        """LD1=0, LD0=1: schrijven en dit kanaal direct bijwerken (LDAC ligt vast aan GND)."""
         code = max(0, min(0xFFFF, int(code)))
         byte0 = (self.address << 6) | (1 << 4) | ((channel & 0x03) << 1)
         self.spi.xfer2([byte0, (code >> 8) & 0xFF, code & 0xFF])

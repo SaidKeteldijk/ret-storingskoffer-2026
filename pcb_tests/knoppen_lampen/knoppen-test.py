@@ -77,7 +77,6 @@ def init_buttons(mcp):
 
 
 def read_stable(mcp):
-    """Leest GPIOA tot DEBOUNCE_READS keer achter elkaar dezelfde waarde komt."""
     last = mcp.read(GPIOA)
     count = 1
     while count < DEBOUNCE_READS:

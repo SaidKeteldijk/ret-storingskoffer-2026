@@ -23,6 +23,10 @@ class CircuitSimulator:
     Relaiscontact: volgt automatisch de relaisspoel met hetzelfde label.
     """
 
+    # Alles wat een stand heeft die van buitenaf te zetten is.
+    SCHAKELBAAR = (TOOL_SWITCH, TOOL_SW2P_NO, TOOL_SW2P_NC, TOOL_SPDT,
+                   TOOL_RCONT, TOOL_RSPDT)
+
     def __init__(self):
         self.components:  List[Component]       = []
         self.wires:       List[Wire]             = []
@@ -30,6 +34,7 @@ class CircuitSimulator:
         self.relay_states:Dict[str, bool]        = {}   # spoel label → bekrachtigd?
         self.live_nodes:  Set[Tuple[int, int]]   = set()
         self.gnd_nodes:   Set[Tuple[int, int]]   = set()
+        self.hand_bediend: Set[int]              = set()   # stand komt van de koffer
 
     def load(self, components: List[Component], wires: List[Wire]):
         self.components  = components
@@ -37,10 +42,10 @@ class CircuitSimulator:
         # Alle schakelbare types opnemen in sw_states
         self.sw_states   = {
             i: False for i, c in enumerate(components)
-            if c.type in (TOOL_SWITCH, TOOL_SW2P_NO, TOOL_SW2P_NC,
-                          TOOL_SPDT, TOOL_RCONT)
+            if c.type in self.SCHAKELBAAR
         }
         self.relay_states = {}
+        self.hand_bediend = set()
         self.solve()
 
     def toggle_switch(self, idx: int):
@@ -49,10 +54,16 @@ class CircuitSimulator:
             self.solve()
 
     def set_switch_from_gpio(self, idx: int, state: bool):
-        """Stel schakelaar in vanuit een GPIO-input."""
-        if self.components[idx].type in (
-                TOOL_SWITCH, TOOL_SW2P_NO, TOOL_SW2P_NC,
-                TOOL_SPDT, TOOL_RCONT):
+        """
+        Stel de stand in vanuit een knop op de koffer.
+
+        Een relaiscontact dat zo bediend wordt, volgt vanaf nu de knop in
+        plaats van zijn spoel. Zonder die aantekening zou de stand wel in
+        sw_states komen te staan maar nergens gelezen worden, omdat een
+        contact normaal via relay_states loopt.
+        """
+        if self.components[idx].type in self.SCHAKELBAAR:
+            self.hand_bediend.add(idx)
             self.sw_states[idx] = state
             self.solve()
 
@@ -70,6 +81,15 @@ class CircuitSimulator:
             self._step()
             if self.relay_states == old:
                 break
+
+    def contact_stand(self, idx: int) -> bool:
+        """Stand van een relaiscontact: van de spoel, of van de knop op de
+        koffer zodra het contact daaraan gekoppeld is."""
+        if idx in self.hand_bediend:
+            return self.sw_states.get(idx, False)
+        if idx >= len(self.components):
+            return False
+        return self.relay_states.get(self.components[idx].label, False)
 
     def _build_adj(self) -> Dict:
         adj: Dict[Tuple, Set] = {}
@@ -137,8 +157,7 @@ class CircuitSimulator:
                     if defect:
                         add(a, b)   # koppeling spoel↔contact verbroken
                     else:
-                        positie_c = self.relay_states.get(c.label, False)
-                        if positie_c:
+                        if self.contact_stand(i):
                             add(a, cv)
                         else:
                             add(a, b)
@@ -150,7 +169,7 @@ class CircuitSimulator:
 
             elif c.type == TOOL_RCONT:
                 # Defect → contact sluit nooit (koppeling verbroken).
-                if not defect and self.relay_states.get(c.label, False):
+                if not defect and self.contact_stand(i):
                     add(pts[0], pts[1])
 
             elif c.type in (TOOL_MOTOR, TOOL_LAMP):
@@ -224,6 +243,17 @@ class CircuitSimulator:
 
     # ── Query methoden ────────────────────────
 
+    def node_is_live(self, punt) -> bool:
+        """
+        Staat er spanning op dit rasterpunt?
+
+        Dit is iets anders dan comp_is_active: daar moet er stroom lopen,
+        hier is alleen nodig dat het punt met de voeding verbonden is. Een
+        meetpunt voor een open schakelaar leest daardoor nog spanning, net
+        als bij een meting met een multimeter.
+        """
+        return punt in self.live_nodes
+
     def wire_is_live(self, w: Wire) -> bool:
         """
         Een draad licht op als minstens één punt erop onder spanning staat.
@@ -257,7 +287,7 @@ class CircuitSimulator:
             if len(pts) >= 3:
                 a, b, cv = pts[0], pts[1], pts[2]
                 if c.type == TOOL_RSPDT:
-                    positie_c = self.relay_states.get(c.label, False)
+                    positie_c = self.contact_stand(idx)
                 else:
                     positie_c = self.sw_states.get(idx, False)
                 actief_pt = cv if positie_c else b

@@ -16,6 +16,8 @@ from constants import (
     LABEL_PREFIX,
     LABEL_PREFIX_OUD,
     SINGLE_TERMINAL,
+    SPANNING_AAN_STANDAARD,
+    SPANNING_STORING_STANDAARD,
     THREE_TERMINAL,
 )
 
@@ -34,6 +36,8 @@ class Component:
     defect:        bool = False
     manual_label:  bool = False
     kanaal:        str = ""
+    spanning_aan:     float = SPANNING_AAN_STANDAARD
+    spanning_storing: float = SPANNING_STORING_STANDAARD
 
 
 @dataclass

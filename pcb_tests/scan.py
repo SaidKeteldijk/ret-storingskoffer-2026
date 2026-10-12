@@ -20,7 +20,6 @@ HAEN = 0x08
 
 
 def opcode(addr, read):
-    """Bouw de SPI-opcode: 0100 A2 A1 A0 R/W."""
     return 0x40 | ((addr & 0x07) << 1) | (1 if read else 0)
 
 
@@ -33,7 +32,6 @@ def read_reg(spi, addr, reg):
 
 
 def hardware_reset():
-    """Trek RESET kort laag. Wordt overgeslagen als RESET_PIN None is."""
     if RESET_PIN is None:
         return
     GPIO.setmode(GPIO.BCM)
@@ -44,17 +42,11 @@ def hardware_reset():
 
 
 def enable_haen(spi):
-    """
-    Zet HAEN aan. De schrijfactie gaat naar alle 8 adressen, zodat elke chip
-    het ontvangt, ook als HAEN al aan stond of de chip afwijkend reageert
-    (bekende errata rond pin A2 bij HAEN = 0).
-    """
     for addr in range(8):
         write_reg(spi, addr, IOCON, HAEN)
 
 
 def probe(spi, addr):
-    """Geeft True terug als er een MCP23S17 op dit adres reageert."""
     original = read_reg(spi, addr, IPOLA)
     found = True
     for pattern in (0xA5, 0x5A):
@@ -67,10 +59,6 @@ def probe(spi, addr):
 
 
 def scan():
-    """
-    Scant alle opgegeven chip-selects en adressen.
-    Geeft een dict terug: {cs: [adres, ...]}
-    """
     results = {}
     hardware_reset()
 

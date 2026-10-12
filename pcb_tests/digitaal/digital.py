@@ -15,8 +15,6 @@ PCB_ADRESSEN = ("001", "010", "011", "100")
 
 
 class MCP23S17:
-    """Een enkele I/O-expander op een vast hardware-adres (A2A1A0)."""
-
     def __init__(self, spi: spidev.SpiDev, hw_adres: int):
         self.spi = spi
         self.opcode_write = 0x40 | (hw_adres << 1)
@@ -30,7 +28,6 @@ class MCP23S17:
         return self.spi.xfer2([self.opcode_read, register, 0x00])[2]
 
     def init_als_output(self) -> None:
-        """Alle 16 pinnen als output, en meteen alles inactief (48V uit)."""
         self._schrijf(IODIRA, 0x00)
         self._schrijf(IODIRB, 0x00)
         self._olat = [0xFF, 0xFF]
@@ -38,19 +35,16 @@ class MCP23S17:
         self._schrijf(OLATB, self._olat[1])
 
     def _bank_bit(self, pin: int) -> tuple[int, int]:
-        """pin 0..15  ->  (bank-index 0=A/1=B, bitpositie 0..7)"""
         if not 0 <= pin <= 15:
             raise ValueError(f"pin moet 0..15 zijn, kreeg {pin}")
         return (0, pin) if pin < 8 else (1, pin - 8)
 
     def set_hoog(self, pin: int) -> None:
-        """Zet de uitgang actief: 48V op de klemmenstrook."""
         bank, bit = self._bank_bit(pin)
         self._olat[bank] &= ~(1 << bit)
         self._schrijf(OLATA if bank == 0 else OLATB, self._olat[bank])
 
     def set_laag(self, pin: int) -> None:
-        """Zet de uitgang inactief: 0V op de klemmenstrook."""
         bank, bit = self._bank_bit(pin)
         self._olat[bank] |= (1 << bit)
         self._schrijf(OLATA if bank == 0 else OLATB, self._olat[bank])
@@ -61,14 +55,11 @@ class MCP23S17:
         self._schrijf(OLATB, self._olat[1])
 
     def status(self) -> list[bool]:
-        """True = uitgang actief (48V), voor pin 0..15, gebaseerd op de cache."""
         return [not bool((self._olat[0] if p < 8 else self._olat[1]) & (1 << (p % 8)))
                 for p in range(16)]
 
 
 class DigitaleUitgangen:
-    """Verzamelt de vier PCB's (binair adres 001..100) achter een simpele interface."""
-
     def __init__(self, spi_bus: int = 0, spi_ce: int = 0, spi_hz: int = 1_000_000):
         self.spi = spidev.SpiDev()
         self.spi.open(spi_bus, spi_ce)

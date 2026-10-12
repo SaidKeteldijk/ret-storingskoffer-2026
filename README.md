@@ -71,6 +71,7 @@ De grafische interface is gebouwd met PyQt5. De schakelingen worden niet als afb
 | `monteur.py` | Het examenscherm voor de monteur (`MonteurCanvas` en `MonteurWindow`). |
 | `display.py` | Bepaalt op welk scherm welk venster terechtkomt. |
 | `koffer_io.py` | De aansturing van de knoppen- en lampenprint via SPI. |
+| `koffer_dac.py` | De aansturing van de spanningsklemmen U1 tot en met U8 via de DAC-printen. |
 | `schermtest.py` | Diagnose: toont welke schermen Qt ziet en hoe ze verdeeld worden. |
 | `simulator.py` | De elektrische simulatie van de schakeling. |
 | `gpio_manager.py`| De koppeling tussen de simulatie en de GPIO-pinnen. |
@@ -214,10 +215,13 @@ Elk component kan aan een kanaal van de knoppen- en lampenprint gekoppeld worden
 
 | Component | Kanaal | Werking |
 |------------------------------------------|----------|-----------------------------------------|
-| Schakelaar, wisselschakelaar, relaiscontact | S1 .. S8 | De fysieke knop stuurt de simulatie aan |
+| Schakelaar, 2-weg wisselschakelaar, relaiscontact, 2-weg relaiscontact | S1 .. S8 | De fysieke knop stuurt de simulatie aan |
 | Lamp, motor, relaisspoel | Q1 .. Q8 | De simulatie stuurt de fysieke lamp aan |
+| Elk component, ook een net label | U1 .. U8 | De simulatie zet een spanning op de meetklem |
 
 Elk kanaal hoort bij één component; de dialoog weigert te sluiten zolang twee componenten hetzelfde kanaal delen.
+
+Een relaiscontact dat aan een knop gekoppeld is, volgt die knop en niet meer zijn spoel. Dat is bedoeld voor een deelschakeling waarin de spoel niet getekend is: de monteur bedient het contact dan rechtstreeks met de knop op de koffer. Zonder koppeling blijft het contact gewoon de spoel met hetzelfde label volgen.
 
 De lampen zijn aangeduid met Q, gelijk aan de opdruk Q1 tot en met Q8 op de knoppen- en lampenprint. Een lamp in de tekening krijgt daarom ook het label Q1, Q2 en zo verder, zodat de tekening, de print en de koppeling dezelfde aanduiding gebruiken. In een eerdere versie heette een lamp H; die labels en kanalen blijven werken en worden bij het laden van de tekening automatisch omgenummerd naar Q.
 
@@ -230,6 +234,40 @@ De print zit op de SPI-bus (CE0) op hardware-adres `000`. De lampen Q1 tot en me
 De aansturing zit in `koffer_io.py` en doet bewust **geen** hardware-reset: de RESET-lijn is gedeeld met de digitale 48V-kaarten en zou hun uitgangen laten zweven. Bij het starten van de simulatie wordt de print ingesteld met de latch eerst laag en pas daarna de richting op uitgang, zodat er geen lamp kort aanflitst. Bij het stoppen gaan alle lampen uit.
 
 Tijdens de simulatie worden de knoppen elke 50 ms uitgelezen. Draait de app op een computer zonder `spidev`, dan wordt automatisch een mockversie van de print geladen. De volledige app blijft dan werken en de knoppen kunnen met de muis omgeschakeld worden via het monitorpaneel onderin het scherm. Hierdoor kan de software volledig op een laptop ontwikkeld en getest worden.
+
+# De meetpunten U1 tot en met U8
+
+Een meetpunt is een plek in de tekening waarvan de spanning op een klem van de koffer komt te staan. De monteur meet daar met een multimeter, net als aan een echte installatie. De acht klemmen worden gevoed door de spannings-DAC's van de twee DAC-printen: U1 tot en met U4 door print 1 en U5 tot en met U8 door print 2.
+
+Elk component kan een meetpunt zijn, ook een net label, een voeding of een massa. Gemeten wordt er altijd op het **eerste aansluitpunt** van het component. In de tekening staat dat punt met een blauwe stip aangegeven, met het klemnummer ernaast, zodat er geen twijfel over kan bestaan waar de meting vandaan komt.
+
+## Hoe de spanning bepaald wordt
+
+De simulatie rekent geen spanningen uit. Ze houdt bij welke punten met de voeding verbonden zijn en welke met massa, meer niet. De waarde die op de klem komt te staan wordt daarom per meetpunt ingesteld; de simulatie kiest alleen welke van die waarden het wordt:
+
+| Toestand van het meetpunt | Spanning op de klem |
+|------------------------------------------|---------------------------|
+| Geen verbinding met de voeding | 0 V |
+| Wel verbinding met de voeding | de ingestelde waarde, standaard 24 V |
+| Wel verbinding, maar aangemerkt als storing | de storingswaarde, standaard 12 V |
+
+Of er spanning op een punt staat is iets anders dan of er stroom door een component loopt. Een meetpunt vóór een open schakelaar leest nog gewoon spanning, terwijl er niets werkt. Dat is precies de situatie die een monteur bij het zoeken naar een storing tegenkomt: 24 V aan de ene kant van de schakelaar, 0 V aan de andere, en daaraan is te zien dat de schakelaar niet sluit.
+
+De storingswaarde maakt een derde soort fout mogelijk die met lampen en knoppen niet te maken is: er staat wel spanning, maar te weinig. Een overgangsweerstand of een aangetaste draad gedraagt zich zo. Die waarde blijft ook tijdens het examen staan, anders zou de storing niet te meten zijn.
+
+## Op het scherm
+
+Op het instructeursscherm staat bij elk meetpunt het klemnummer met de actuele spanning, bijvoorbeeld `U1 24.0V`, en onderin verschijnt per klem een kaartje in het monitorpaneel. Op het monteursscherm staat alleen het klemnummer. De monteur ziet dus wel waar hij moet meten, maar niet wat eruit komt; dat moet hij zelf vaststellen.
+
+## De aansturing
+
+De aansturing zit in `koffer_dac.py`. De spanningsklemmen hangen aan de DAC8564's op CE1 in SPI-mode 1: U1 tot en met U4 aan adres `01` op print 1, U5 tot en met U8 aan adres `10` op print 2. De gevraagde spanning wordt door 19,2 gedeeld, want dat is de versterking van de MCP6002-booster, en daarna begrensd op 2,5 V aan de DAC en 48 V aan de klem.
+
+Er wordt alleen geschreven als een waarde verandert. Bij het stoppen van de simulatie, bij het afsluiten van de app en bij het uitschakelen van de koffer gaan alle acht klemmen naar 0 V.
+
+> **Let op:** de DAC8564 heeft geen data-uitgang, dus er is geen manier om te controleren of de DAC-print aangesloten is. Waar de knoppen- en lampenprint zich met een testpatroon laat herkennen, kan dat hier niet. Zit de print los, dan gebeurt er stil niets en komt dat pas bij het meten aan het licht.
+
+De stroomlussen van 4 tot 20 mA worden nog niet door de app aangestuurd. Die zijn voorlopig alleen met `pcb_tests/analoog/koffer-analoog.py` te bedienen.
 
 > **Let op:** de oude koppeling aan losse BCM-pinnen via `gpio_manager.py` bestaat nog voor bestanden van vóór deze wijziging, maar de dialoog biedt die niet meer aan. Zodra je een schakeling via de dialoog opnieuw koppelt, vervalt de pinkoppeling.
 
@@ -270,7 +308,9 @@ Een deelschakeling wordt opgeslagen als JSON-bestand in de map `circuits`. Het b
       "gpio_dir": "OUT",
       "defect": false,
       "manual_label": false,
-      "kanaal": "Q1"
+      "kanaal": "Q1",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0
     }
   ],
   "wires": [

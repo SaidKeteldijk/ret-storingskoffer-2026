@@ -53,7 +53,6 @@ class DAC8564:
         self.address = address & 0x03
 
     def write_code(self, channel, code):
-        """LD1=0, LD0=1: schrijven en dit kanaal direct bijwerken (LDAC ligt vast aan GND)."""
         code = max(0, min(0xFFFF, int(code)))
         byte0 = (self.address << 6) | (1 << 4) | ((channel & 0x03) << 1)
         self.spi.xfer2([byte0, (code >> 8) & 0xFF, code & 0xFF])
