@@ -10,6 +10,7 @@ from PyQt5.QtGui  import QPainter, QPen, QFont, QColor, QBrush
 from PyQt5.QtCore import Qt
 
 from canvas    import CircuitCanvas
+from draw      import stel_labelschaal
 from constants import (GRID, C_BG, C_SIDE, C_BORDER, C_MUTED,
                        C_GREEN, C_YELLOW, C_RED)
 from display   import MONTEUR_BREEDTE, MONTEUR_HOOGTE
@@ -28,6 +29,11 @@ class MonteurCanvas(CircuitCanvas):
     # Een kleine schakeling mag beeldvullend, maar niet grotesk uitvergroot.
     MAX_ZOOM   = 2.0
     BALK_HOOGTE = 64
+
+    # Componentnamen worden op dit scherm zo gezet dat ze altijd even groot
+    # overkomen, ongeacht hoe sterk de tekening verkleind is. Op zeven inch
+    # zijn ze anders niet te lezen.
+    NAAM_VERGROTING = 2.2
 
     def __init__(self):
         super().__init__(gpio=False)
@@ -113,9 +119,15 @@ class MonteurCanvas(CircuitCanvas):
                         self.BALK_HOOGTE + (beschikbaar_h - bh * schaal) / 2)
             p.scale(schaal, schaal)
             p.translate(-x1, -y1)
-            # Geen raster: dit is een tekening, geen editor.
-            self._draw_wires(p)
-            self._draw_comps(p)
+            # De painter verkleint alles met schaal; door de namen met dezelfde
+            # factor te vergroten komen ze er op vaste grootte uit.
+            stel_labelschaal(self.NAAM_VERGROTING / schaal)
+            try:
+                # Geen raster: dit is een tekening, geen editor.
+                self._draw_wires(p)
+                self._draw_comps(p)
+            finally:
+                stel_labelschaal(1.0)
             p.restore()
 
         self._teken_balk(p)

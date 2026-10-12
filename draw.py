@@ -36,6 +36,33 @@ from constants import (
 )
 
 
+_LABEL_SCHAAL = 1.0
+
+
+def stel_labelschaal(factor: float):
+    """
+    Vergroot of verklein alle componentnamen.
+
+    Het monteursscherm van 7 inch zet de tekening kleiner neer om hem passend
+    te maken, waardoor de namen onleesbaar worden. Door hier een factor te
+    zetten blijven de namen op een vaste grootte op het scherm staan, terwijl
+    de contactnummers en de aanduidingen bij de aansluitpunten meeschalen met
+    de tekening.
+    """
+    global _LABEL_SCHAAL
+    _LABEL_SCHAAL = max(0.5, min(4.0, float(factor)))
+
+
+def labelschaal() -> float:
+    return _LABEL_SCHAAL
+
+
+def labelfont(punten: int = 9, vet: bool = True) -> QFont:
+    """Lettertype voor een componentnaam, met de ingestelde schaal erin."""
+    return QFont("Courier New", max(6, round(punten * _LABEL_SCHAAL)),
+                 QFont.Bold if vet else QFont.Normal)
+
+
 def _draaihoek(p) -> float:
     """De rotatie die op dit moment in de transformatie van de painter zit."""
     t = p.transform()
@@ -81,8 +108,8 @@ def _ec_schakelaar(p, label, cs, gesloten=False):
     p.drawEllipse(7, -3, 5, 5)
     p.setBrush(QBrush(Qt.transparent))
     p.setPen(QColor(kleur))
-    p.setFont(QFont("Courier New", 9, QFont.Bold))
-    _tekst(p, 0, -17, label)
+    p.setFont(labelfont(9))
+    _tekst(p, 0, -21 * labelschaal(), label)
     p.setFont(QFont("Courier New", 12))
     _tekst(p, -CONN + 7, 22, cs)
     _tekst(p, CONN - 7, 22, cs + 1)
@@ -117,8 +144,8 @@ def _ec_schakelaar2p(p, label, cs, gesloten=False, nc=False):
     p.setPen(QPen(QColor(kleur), 1, Qt.DashLine))
     p.drawLine(0, -CONN - 7, 0, CONN - 7)
     p.setPen(QColor(kleur))
-    p.setFont(QFont("Courier New", 9, QFont.Bold))
-    _tekst(p, 0, -CONN - 17, label)
+    p.setFont(labelfont(9))
+    _tekst(p, 0, -CONN - 17 * labelschaal(), label)
     badge = "NC" if nc else "NO"
     p.setFont(QFont("Courier New", 14))
     _tekst(p, CONN + 16, 0, badge)
@@ -185,8 +212,8 @@ def _ec_spdt(p, label, cs, positie_c=False, flipped=False):
     # Naast de aansluitdraad van COM, anders loopt de draad door de tekst.
     _tekst(p, _zijkant(com_x, rc + 22), com_y + 26, "COM")
 
-    p.setFont(QFont("Courier New", 9, QFont.Bold))
-    _tekst(p, 0, -CONN - 22, label)
+    p.setFont(labelfont(9))
+    _tekst(p, 0, -CONN - 22 * labelschaal(), label)
 
     p.setFont(QFont("Courier New", 12))
     # Naast de letter van het aansluitpunt, weg van het midden van het
@@ -206,7 +233,7 @@ def _ec_relaisspoel(p, label, cs, actief=False):
 
     # De spoel is een staand kader. De breedte groeit mee met het label, zodat
     # een horizontaal gezet label er altijd in past.
-    p.setFont(QFont("Courier New", 9, QFont.Bold))
+    p.setFont(labelfont(9))
     fm = p.fontMetrics()
     breedte = max(22, min(fm.horizontalAdvance(tekst) + 10, CONN * 2 - 16))
     hoogte = 44
@@ -240,8 +267,8 @@ def _ec_relaiscontact(p, label, cs, gesloten=False):
     p.drawEllipse(7, -3, 5, 5)
     p.setBrush(QBrush(Qt.transparent))
     p.setPen(QColor(kleur))
-    p.setFont(QFont("Courier New", 9, QFont.Bold))
-    _tekst(p, 0, -17, label)
+    p.setFont(labelfont(9))
+    _tekst(p, 0, -21 * labelschaal(), label)
     p.setFont(QFont("Courier New", 12))
     _tekst(p, -CONN + 7, 22, cs)
     _tekst(p, CONN - 7, 22, cs + 1)
@@ -251,11 +278,12 @@ def _ec_motor(p, label, cs, actief=False):
     kleur = C_GREEN if actief else C_RED
     p.setPen(QPen(QColor(kleur), 2))
     p.setBrush(QBrush(QColor(kleur + "33") if actief else Qt.transparent))
-    p.drawLine(-CONN, 0, -11, 0)
-    p.drawLine(11, 0, CONN, 0)
-    p.drawEllipse(-11, -11, 22, 22)
+    p.setFont(labelfont(10))
+    straal = max(11, p.fontMetrics().horizontalAdvance(label or "M") // 2 + 4)
+    p.drawLine(-CONN, 0, -straal, 0)
+    p.drawLine(straal, 0, CONN, 0)
+    p.drawEllipse(-straal, -straal, straal * 2, straal * 2)
     p.setPen(QColor(kleur))
-    p.setFont(QFont("Courier New", 10, QFont.Bold))
     _tekst(p, 0, 0, label if label else "M")
     p.setFont(QFont("Courier New", 12))
     _tekst(p, -CONN + 7, 22, cs)
@@ -273,8 +301,8 @@ def _ec_lamp(p, label, cs, actief=False):
         p.drawLine(-4, -4, 4, 4)
         p.drawLine(4, -4, -4, 4)
     p.setPen(QColor(kleur))
-    p.setFont(QFont("Courier New", 9, QFont.Bold))
-    _tekst(p, 0, -15, label)
+    p.setFont(labelfont(9))
+    _tekst(p, 0, -19 * labelschaal(), label)
     p.setFont(QFont("Courier New", 12))
     _tekst(p, -CONN + 7, 22, cs)
     _tekst(p, CONN - 7, 22, cs + 1)
@@ -289,8 +317,8 @@ def _ec_voeding(p, label, cs):
     p.drawLine(-8, 10, 8, 10)
     p.drawLine(0, 4, 0, 16)
     p.setPen(QColor(kleur))
-    p.setFont(QFont("Courier New", 9, QFont.Bold))
-    _tekst(p, 0, -26, label if label else "+24VDC")
+    p.setFont(labelfont(9))
+    _tekst(p, 0, -26 * labelschaal(), label if label else "+24VDC")
 
 
 def _ec_massa(p, label, cs):
@@ -303,8 +331,8 @@ def _ec_massa(p, label, cs):
     p.drawLine(-6, 11, 6, 11)
     p.drawLine(-3, 16, 3, 16)
     p.setPen(QColor(kleur))
-    p.setFont(QFont("Courier New", 9))
-    _tekst(p, 0, -26, label if label else "GND")
+    p.setFont(labelfont(9, vet=False))
+    _tekst(p, 0, -26 * labelschaal(), label if label else "GND")
 
 
 def _ec_netlabel(p, label, cs):
@@ -314,13 +342,17 @@ def _ec_netlabel(p, label, cs):
     p.setPen(QPen(QColor(kleur), 2))
     p.drawLine(0, 0, 14, 0)
 
+    p.setFont(labelfont(9))
+    fm = p.fontMetrics()
+    kader_b = max(34, fm.horizontalAdvance(tekst) + 12)
+    kader_h = max(20, fm.height() + 6)
+
     p.setPen(QPen(QColor(kleur), 1))
     p.setBrush(QBrush(QColor(kleur + "22")))
-    p.drawRoundedRect(14, -10, max(34, len(tekst) * 8 + 10), 20, 4, 4)
+    p.drawRoundedRect(14, -kader_h // 2, kader_b, kader_h, 4, 4)
 
     p.setPen(QColor(kleur))
-    p.setFont(QFont("Courier New", 9, QFont.Bold))
-    _tekst(p, 14 + max(34, len(tekst) * 8 + 10) / 2, 0, tekst)
+    _tekst(p, 14 + kader_b / 2, 0, tekst)
 
 
 EC_DRAW_BASE = {

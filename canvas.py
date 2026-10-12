@@ -30,7 +30,8 @@ from models    import (
 )
 from draw      import (EC_DRAW_BASE, _ec_schakelaar, _ec_schakelaar2p, _ec_spdt, _ec_rspdt, _ec_netlabel,
                        _ec_relaisspoel, _ec_relaiscontact, _ec_motor, _ec_lamp,
-                       _ec_voeding, _ec_massa)
+                       _ec_voeding, _ec_massa, labelfont, labelschaal,
+                       stel_labelschaal)
 from simulator import CircuitSimulator
 from gpio_manager import GPIOManager, ON_RPI, GPIO
 from koffer_io import (KofferIO, SPI_AANWEZIG, is_knop, is_lamp, is_spanning,
@@ -946,6 +947,7 @@ class CircuitCanvas(QWidget):
     # ══════════════════════════════════════════
 
     def paintEvent(self, event):
+        stel_labelschaal(1.0)        # het monteursscherm zet dit zelf hoger
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
         self._draw_grid(p)
@@ -1053,28 +1055,36 @@ class CircuitCanvas(QWidget):
             # Verborgen tijdens examen zodat de monteur ze zelf moet vinden.
             if getattr(comp, 'defect', False) and self.mode in ("edit", "sim") and not self.exam_active:
                 self._draw_defect_overlay(p, cx, cy)
-            # Meetklem hoort bij de schakeling en wordt in elke modus
-            # getekend, ook op het monteursscherm. Het badge voor een knop of
-            # lamp is alleen voor de instructeur bedoeld.
+            # De koppeling met de koffer hoort bij de schakeling en wordt in
+            # elke modus getekend, ook op het monteursscherm. Zonder die
+            # aanduiding weet de monteur niet welke van de acht knoppen,
+            # lampen of meetklemmen bij welk symbool hoort.
             if is_spanning(comp.kanaal):
                 self._draw_meetklem(p, comp)
-            elif (comp.kanaal or comp.gpio_pin >= 0) and self.mode in ("sim", "edit"):
+            elif comp.kanaal or comp.gpio_pin >= 0:
                 self._draw_gpio_badge(p, cx, cy, comp)
 
     def _draw_gpio_badge(self, p, cx, cy, comp):
-        """Klein badge boven elk component dat een GPIO-koppeling heeft."""
+        """Klein badge boven elk component dat aan de koffer gekoppeld is."""
         txt   = comp.kanaal if comp.kanaal else f"GPIO{comp.gpio_pin}"
         dir_k = C_GREEN if comp.gpio_dir == "IN" else C_PEACH
-        p.setFont(QFont("Courier New", 7, QFont.Bold))
+        p.setFont(labelfont(8))
         fm    = p.fontMetrics()
         tw    = fm.horizontalAdvance(txt)
-        bx    = cx - tw//2 - 4
-        by    = cy - CONN - 10    # boven het component (CONN = 40px = 1 rastercel)
+        bh    = fm.height() + 3
+        f     = labelschaal()
+        # Haaks op het component, zodat het badge noch het symbool noch de
+        # draden eronder bedekt: naast een staand component, boven een
+        # liggend component.
+        if comp.rotation % 180 == 90:
+            bx, by = cx + round(20 * f), cy + round(13 * f)
+        else:
+            bx, by = cx - tw // 2 - 4, cy - CONN - round(6 * f)
         p.setPen(QPen(QColor(dir_k), 1))
         p.setBrush(QBrush(QColor(dir_k + "44")))
-        p.drawRoundedRect(bx, by, tw + 8, 14, 3, 3)
+        p.drawRoundedRect(bx, by, tw + 8, bh, 3, 3)
         p.setPen(QColor(dir_k))
-        p.drawText(bx + 4, by + 11, txt)
+        p.drawText(bx + 4, by + fm.ascent() + 1, txt)
 
     def _draw_meetklem(self, p, comp):
         """
@@ -1095,20 +1105,23 @@ class CircuitCanvas(QWidget):
             if volt is not None:
                 txt = f"{comp.kanaal}  {volt:.1f}V"
 
+        f = labelschaal()
+        r = round(4 * f)
         p.setPen(QPen(QColor(C_SKY), 2))
         p.setBrush(QBrush(QColor(C_SKY)))
-        p.drawEllipse(mx - 4, my - 4, 8, 8)
+        p.drawEllipse(mx - r, my - r, r * 2, r * 2)
 
-        p.setFont(QFont("Courier New", 8, QFont.Bold))
+        p.setFont(labelfont(8))
         fm = p.fontMetrics()
         bw = fm.horizontalAdvance(txt) + 8
-        bx = mx + 9
-        by = my + 5
+        bh = fm.height() + 3
+        bx = mx + r + round(5 * f)
+        by = my + round(5 * f)
         p.setPen(QPen(QColor(C_SKY), 1))
         p.setBrush(QBrush(QColor(C_BG)))
-        p.drawRoundedRect(bx, by, bw, 15, 3, 3)
+        p.drawRoundedRect(bx, by, bw, bh, 3, 3)
         p.setPen(QColor(C_SKY))
-        p.drawText(bx + 4, by + 11, txt)
+        p.drawText(bx + 4, by + fm.ascent() + 1, txt)
 
     def _draw_defect_overlay(self, p, cx, cy):
         """Rood X-kruis over een defect component."""

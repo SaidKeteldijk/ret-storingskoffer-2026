@@ -287,6 +287,12 @@ STORINGSKOFFER_MONTEUR=DSI-1     << schermnaam of index voor de monteur
 STORINGSKOFFER_INSTRUCTEUR=0     << schermnaam of index voor de instructeur
 ```
 
+## Wat de monteur ziet
+
+Het monteursscherm toont de schakeling als een tekening op papier: geen menu, geen oplichtende draden en geen storingsmarkering. Wat er wél bij staat, is de koppeling met de koffer. Bij elk gekoppeld component staat het kanaalnummer, `S1` tot en met `S8` voor de knoppen, `Q1` tot en met `Q8` voor de lampen en `U1` tot en met `U8` voor de meetklemmen. Zonder die aanduiding is niet te zien welke van de acht knoppen of lampen bij welk symbool hoort.
+
+De tekening wordt passend geschaald, en bij een grote schakeling wordt dat een flinke verkleining. Op een scherm van zeven inch zijn de componentnamen dan niet meer te lezen. Daarom worden alleen de namen tegen die verkleining in vergroot, zodat ze er altijd even groot uit komen; de contactnummers en de aanduidingen bij de aansluitpunten schalen gewoon mee met de tekening. De factor staat in `monteur.py` als `NAAM_VERGROTING` en de omrekening zit in `draw.py` in `stel_labelschaal`.
+
 Met de toets `F11` kan in beide vensters de schermvullende weergave in- en uitgeschakeld worden. Met `Escape` verlaat het monteursvenster de schermvullende weergave. Dit is nodig omdat de vensters op de Raspberry Pi zonder titelbalk draaien.
 
 # Het opslaan van een deelschakeling
