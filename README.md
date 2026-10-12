@@ -443,6 +443,23 @@ te kijken als er iets niet goed gaat.
 > opnieuw zodra je hem afsluit. Zet de service stil met `systemctl --user stop`
 > voordat je handmatig gaat testen.
 
+# De projectbestanden
+
+Deze repository bevat alleen de software. Alle overige projectbestanden staan op de SharePoint-pagina van de afdeling Infraservices Energievoorziening, in de map `Said Keteldijk - Afstudeerproject - storingskoffer`. Daar is onder meer te vinden:
+
+- `4-20mA PCB Autodesk Fusion 360 project` – het ontwerp van de stroomlusprint
+- `48V output printplaat Autodesk Fusion 360` – het ontwerp van de digitale uitgangskaart
+- `Behuizing` – het ontwerp van de koffer zelf
+- `Extra COM printplaat` – het ontwerp van de extra communicatieprint
+- `Github repository (codering voor de hardware)` – een kopie van deze repository
+- `knoppen en lampen printplaat Autodesk Fusion 360` – het ontwerp van de knoppen- en lampenprint
+- `Test en instructie video's` – opnamen van de uitgevoerde testen en de bediening van de koffer
+- `Verslag en bijlagen` – het projectdocument met alle bijlagen
+
+De test- en instructievideo's horen bij de unittesten uit het verslag en laten zien hoe de koffer bediend wordt. Wie de koffer overneemt of het project voortzet, begint daar: de video's leggen vast wat in tekst niet goed over te brengen is.
+
+Toegang tot de map loopt via de afdeling Energievoorziening van de RET (EV).
+
 # Inloggegevens
 
 Om in te loggen op de Raspberry Pi zelf om de achterliggende code aan te passen kan er verbinding worden gemaakt met de Raspberry Pi via SSH, VNC of WinSCP. Het wachtwoord hiervoor is te vinden bij de Energievoorziening van de RET (EV).
