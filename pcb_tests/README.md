@@ -29,8 +29,8 @@ hoofdmap van `pcb_tests`.
 | `knoppen_lampen/` | `lampen-test.py` | Lampen Q1..Q8 los aansturen |
 | `knoppen_lampen/` | `knoppen-test.py` | Knoppen S1..S8 uitlezen |
 | `knoppen_lampen/` | `semi-integratietest-knop-lamp.py` | Knop bedient de bijbehorende lamp |
-| `digitaal/` | `digital.py` | De vier 48V-uitgangskaarten per pin bedienen |
-| `digitaal/` | `digitale-print.py` | Alleen de kaarten die je opgeeft, met HAEN en RESET goed |
+| `digitaal/` | `digital.py` | De 48V-uitgangskaarten per pin bedienen |
+| `digitaal/` | `digitale-print.py` | Vervallen: `digital.py` doet dit nu zelf |
 | `analoog/` | `dac-tester.py` | De twee DAC8564's van een losse print: 4-20 mA en 0-48 V |
 | `analoog/` | `koffer-analoog.py` | De acht klemmen U1-U8 en lussen I1-I8 over beide printen |
 
@@ -149,101 +149,53 @@ adres `000`.
 ## digitaal/ - de 48V-uitgangskaarten
 
 Vier MCP23S17's op CE0, hardware-adres `001` tot en met `100`. Adres `000` is de
-knoppen/lampenprint en wordt door `digital.py` niet aangeraakt.
+knoppen/lampenprint en wordt niet aangeraakt.
 
 Pinnummering: 0 tot en met 15, waarbij 0-7 = GPIOA0-7 en 8-15 = GPIOB0-7.
 PCB-adressen geef je binair op, net als in de scan: `010` is adres 2.
 
-`digital.py` gaat uit van een geinverteerde open-drain levelshifter:
-
-| MCP-pin | Uitgang |
-|-----------|----------------|
-| 1 (3,3 V) | 0 V, inactief |
-| 0 (0 V) | 48 V, actief |
-
-Die inversie wordt verborgen: `set_hoog()` zet de uitgang op 48 V.
-
-> **Let op:** deze polariteit is nog niet definitief. Uit de metingen aan de
-> kaarten kwam de omgekeerde conclusie (latch 1 = 48 V). Controleer dit voordat
-> je het script op een opgebouwde koffer gebruikt: bij de verkeerde aanname zet
-> `init_als_output()` juist alle 64 uitgangen op 48 V in plaats van uit.
-
-Commando's: `<pcb> <pin> hoog`, `<pcb> <pin> laag`, `status`, `uit`, `help`,
-`exit`.
-
-### Een losse kaart: digitale-print.py
-
-`digital.py` maakt bij het starten alle vier de kaarten aan en zet elke kaart
-meteen als uitgang. Met een enkele kaart aangesloten verdwijnen de schrijfacties
-naar de andere drie adressen in het niets, want een MCP23S17 bevestigt een
-schrijfactie niet. Het lijkt dan te werken terwijl `status` drie kaarten toont
-die er niet zijn. Daarnaast zet `digital.py` HAEN niet aan, waardoor de
-adressering pas klopt als er eerst een `scan.py` overheen is gegaan.
-
-`digitale-print.py` praat alleen met de kaarten die je opgeeft, standaard
-adres `001`:
-
 ```console
-python3 digitaal/digitale-print.py              # alleen 001
-python3 digitaal/digitale-print.py 001 010      # twee kaarten
+python3 digitaal/digital.py              # zoekt 001 t/m 100
+python3 digitaal/digital.py 001          # alleen die ene kaart
 ```
 
-De bediening is gelijk aan die van `digital.py`: `<adres> <pin> hoog` of
-`laag`, met het adres binair en de pin van 0 tot en met 15.
-
-Het script zet zelf HAEN aan en controleert met een testpatroon of de kaart
-antwoordt. De RESET-lijn wordt hoog gezet maar krijgt **geen puls**: die lijn is
-gedeeld met de knoppen- en lampenprint, en een puls zou daar de uitgangen laten
-zweven.
+Het script zet de RESET-lijn hoog **zonder puls**, zet HAEN aan, en controleert
+per adres met een testpatroon of er een kaart antwoordt. Kaarten die niet
+antwoorden worden gemeld en overgeslagen in plaats van stilzwijgend meegenomen.
 
 > **Let op:** `scan.py` eindigt met `GPIO.cleanup()`, waarna GPIO25 weer ingang
-> wordt. Zonder pull-up zakt RESET dan weg en houden alle MCP23S17's zich stil.
-> Daarom moet elk script dat met de kaarten praat de lijn zelf hoog zetten, en
-> is een scan die net gelukt is geen garantie dat het volgende script de kaart
-> nog vindt. `digital.py` doet dit nog niet.
+> wordt. Zonder pull-up zakt RESET dan weg en houden alle MCP23S17's zich stil:
+> de schrijfacties komen aan noch gaan fout, er gebeurt alleen niets. Daarom
+> zet elk script dat met de kaarten praat die lijn zelf hoog. Een scan die net
+> gelukt is, is geen garantie dat het volgende script de kaart nog vindt.
 
-Omdat de polariteit nog niet vaststaat, staat die bovenin het bestand als een
-losse constante:
+| Commando | Werking |
+|---------------------------|---------------------------------------------|
+| `<pcb> <pin> hoog` | die uitgang op 48V |
+| `<pcb> <pin> laag` | die uitgang op 0V |
+| `<pcb> alles hoog\|laag` | alle 16 uitgangen van die kaart tegelijk |
+| `aan` | alle uitgangen van alle gevonden kaarten op 48V |
+| `uit` | alle uitgangen van alle gevonden kaarten op 0V |
+| `status` | leest OLAT terug en toont welke klemmen 48V geven |
+| `help`, `exit` | overzicht en afsluiten |
+
+`status` leest de latches terug uit de chip en toont dus niet wat het script
+denkt, maar wat de kaart werkelijk vasthoudt.
+
+De polariteit van de uitgangstrap staat als losse constante bovenin:
 
 ```python
 KLEM_HOOG_BIJ_LATCH = 0
 ```
 
-Het script meldt bij het starten welke aanname actief is. Geeft `001 0 hoog`
-0 V in plaats van 48 V, dan zet je die constante op `1` en klopt alles weer.
+Nul betekent: de uitgangstrap is inverterend, een latch van 0 geeft 48 V op de
+klem. Het script meldt bij het starten welke aanname actief is.
 
-Bij het starten blijven alle pinnen ingang. Een pin wordt pas uitgang op het
-moment dat je hem aanstuurt, en de latch gaat altijd eerst naar de juiste waarde
-en pas daarna de richting naar uitgang. Daardoor kan een verkeerde aanname over
-de polariteit hooguit die ene pin aan zetten, en niet alle zestien tegelijk zoals
-bij `digital.py`. `<adres> alles hoog` doet dat wel, maar dan vraag je er zelf
-om.
-
-| Commando | Werking |
-|--------------------------|-----------------------------------------------|
-| `<adres> <pin> hoog` | die uitgang op 48V |
-| `<adres> <pin> laag` | die uitgang op 0V |
-| `<adres> alles hoog\|laag` | alle 16 uitgangen van die kaart tegelijk |
-| `status` | per kaart welke uitgangen actief zijn |
-| `uit` | alle uitgangen van alle kaarten op 0V |
-| `help` | het overzicht op het scherm |
-| `q` | stoppen, alle uitgangen op 0V |
-
-Een sessie ziet er zo uit:
-
-```console
-> 001 1 hoog
-Kaart 001 pin 1 (GPIOA1) op 48V.
-> status
-  kaart 001: 48V op [1]   (aangestuurd: [1])
-> 001 1 laag
-Kaart 001 pin 1 (GPIOA1) op 0V.
-> 001 alles hoog
-Alle 16 uitgangen van kaart 001 op 48V.
-> uit
-Alle uitgangen op 0V.
-> q
-```
+> **Let op:** deze polariteit is nog niet gemeten. Uit de metingen aan de kaarten
+> kwam de omgekeerde conclusie (latch 1 = 48 V). Geeft `001 0 hoog` straks 0 V in
+> plaats van 48 V, zet de constante dan op `1`; de rest van het script klopt dan
+> meteen ook. Zolang de aanname verkeerd staat, zet `init_als_output()` de
+> uitgangen bij het starten juist op 48 V in plaats van uit.
 
 ## analoog/ - de DAC-print
 
