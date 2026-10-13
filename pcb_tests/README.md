@@ -30,7 +30,7 @@ hoofdmap van `pcb_tests`.
 | `knoppen_lampen/` | `knoppen-test.py` | Knoppen S1..S8 uitlezen |
 | `knoppen_lampen/` | `semi-integratietest-knop-lamp.py` | Knop bedient de bijbehorende lamp |
 | `digitaal/` | `digital.py` | De vier 48V-uitgangskaarten per pin bedienen |
-| `digitaal/` | `digitale-print.py` | Een losse 48V-uitgangskaart, met de polariteit nog open |
+| `digitaal/` | `digitale-print.py` | Alleen de kaarten die je opgeeft, met HAEN en RESET goed |
 | `analoog/` | `dac-tester.py` | De twee DAC8564's van een losse print: 4-20 mA en 0-48 V |
 | `analoog/` | `koffer-analoog.py` | De acht klemmen U1-U8 en lussen I1-I8 over beide printen |
 
@@ -180,12 +180,16 @@ schrijfactie niet. Het lijkt dan te werken terwijl `status` drie kaarten toont
 die er niet zijn. Daarnaast zet `digital.py` HAEN niet aan, waardoor de
 adressering pas klopt als er eerst een `scan.py` overheen is gegaan.
 
-`digitale-print.py` werkt met een kaart tegelijk, standaard adres `001`:
+`digitale-print.py` praat alleen met de kaarten die je opgeeft, standaard
+adres `001`:
 
 ```console
-python3 digitaal/digitale-print.py          # adres 001
-python3 digitaal/digitale-print.py 010      # een andere kaart
+python3 digitaal/digitale-print.py              # alleen 001
+python3 digitaal/digitale-print.py 001 010      # twee kaarten
 ```
+
+De bediening is gelijk aan die van `digital.py`: `<adres> <pin> hoog` of
+`laag`, met het adres binair en de pin van 0 tot en met 15.
 
 Het script zet zelf HAEN aan en controleert met een testpatroon of de kaart
 antwoordt. De RESET-lijn wordt hoog gezet maar krijgt **geen puls**: die lijn is
@@ -198,27 +202,48 @@ zweven.
 > is een scan die net gelukt is geen garantie dat het volgende script de kaart
 > nog vindt. `digital.py` doet dit nog niet.
 
-Omdat de polariteit nog niet vaststaat, werkt dit script met de latchwaarde van
-de MCP23S17 en niet met "aan" en "uit". Je zet een bit en meet zelf wat er op de
-klem gebeurt. Bij het starten blijven alle pinnen ingang, zodat het aansluiten en
-controleren zelf niets kan aansturen.
+Omdat de polariteit nog niet vaststaat, staat die bovenin het bestand als een
+losse constante:
+
+```python
+KLEM_HOOG_BIJ_LATCH = 0
+```
+
+Het script meldt bij het starten welke aanname actief is. Geeft `001 0 hoog`
+0 V in plaats van 48 V, dan zet je die constante op `1` en klopt alles weer.
+
+Bij het starten blijven alle pinnen ingang. Een pin wordt pas uitgang op het
+moment dat je hem aanstuurt, en de latch gaat altijd eerst naar de juiste waarde
+en pas daarna de richting naar uitgang. Daardoor kan een verkeerde aanname over
+de polariteit hooguit die ene pin aan zetten, en niet alle zestien tegelijk zoals
+bij `digital.py`. `<adres> alles hoog` doet dat wel, maar dan vraag je er zelf
+om.
 
 | Commando | Werking |
-|-------------------|------------------------------------------------------|
-| `enkel <pin>` | alleen die pin wordt uitgang, de overige 15 blijven ingang |
-| `l <pin> 0\|1` | de latch van een pin zetten |
-| `rust 0\|1` | vastleggen welke latchwaarde de uitgang uit zet |
-| `uitgang` | alle 16 pinnen uitgang, latches op de rustwaarde |
-| `alles 0\|1` | alle latches tegelijk |
-| `ingang` | alle pinnen terug naar ingang |
-| `status` | IODIR, OLAT en GPIO zoals de kaart ze teruggeeft |
+|--------------------------|-----------------------------------------------|
+| `<adres> <pin> hoog` | die uitgang op 48V |
+| `<adres> <pin> laag` | die uitgang op 0V |
+| `<adres> alles hoog\|laag` | alle 16 uitgangen van die kaart tegelijk |
+| `status` | per kaart welke uitgangen actief zijn |
+| `uit` | alle uitgangen van alle kaarten op 0V |
+| `help` | het overzicht op het scherm |
+| `q` | stoppen, alle uitgangen op 0V |
 
-De volgorde om de polariteit vast te stellen: sluit de kaart aan op 5 V en 48 V
-met de voeding stroombegrensd, start het script, typ `enkel 0`, en meet de klem
-bij `l 0 0` en bij `l 0 1`. De latchwaarde die 0 V oplevert, leg je vast met
-`rust`. Pas daarna is `uitgang` veilig, want dan weet het script welke waarde de
-kaart in rust zet. Zolang `rust` niet klopt doet `uitgang` precies wat de
-waarschuwing hierboven beschrijft.
+Een sessie ziet er zo uit:
+
+```console
+> 001 1 hoog
+Kaart 001 pin 1 (GPIOA1) op 48V.
+> status
+  kaart 001: 48V op [1]   (aangestuurd: [1])
+> 001 1 laag
+Kaart 001 pin 1 (GPIOA1) op 0V.
+> 001 alles hoog
+Alle 16 uitgangen van kaart 001 op 48V.
+> uit
+Alle uitgangen op 0V.
+> q
+```
 
 ## analoog/ - de DAC-print
 
