@@ -30,6 +30,7 @@ hoofdmap van `pcb_tests`.
 | `knoppen_lampen/` | `knoppen-test.py` | Knoppen S1..S8 uitlezen |
 | `knoppen_lampen/` | `semi-integratietest-knop-lamp.py` | Knop bedient de bijbehorende lamp |
 | `digitaal/` | `digital.py` | De vier 48V-uitgangskaarten per pin bedienen |
+| `digitaal/` | `digitale-print.py` | Een losse 48V-uitgangskaart, met de polariteit nog open |
 | `analoog/` | `dac-tester.py` | De twee DAC8564's van een losse print: 4-20 mA en 0-48 V |
 | `analoog/` | `koffer-analoog.py` | De acht klemmen U1-U8 en lussen I1-I8 over beide printen |
 
@@ -169,6 +170,48 @@ Die inversie wordt verborgen: `set_hoog()` zet de uitgang op 48 V.
 
 Commando's: `<pcb> <pin> hoog`, `<pcb> <pin> laag`, `status`, `uit`, `help`,
 `exit`.
+
+### Een losse kaart: digitale-print.py
+
+`digital.py` maakt bij het starten alle vier de kaarten aan en zet elke kaart
+meteen als uitgang. Met een enkele kaart aangesloten verdwijnen de schrijfacties
+naar de andere drie adressen in het niets, want een MCP23S17 bevestigt een
+schrijfactie niet. Het lijkt dan te werken terwijl `status` drie kaarten toont
+die er niet zijn. Daarnaast zet `digital.py` HAEN niet aan, waardoor de
+adressering pas klopt als er eerst een `scan.py` overheen is gegaan.
+
+`digitale-print.py` werkt met een kaart tegelijk, standaard adres `001`:
+
+```console
+python3 digitaal/digitale-print.py          # adres 001
+python3 digitaal/digitale-print.py 010      # een andere kaart
+```
+
+Het script zet zelf HAEN aan, controleert met een testpatroon of de kaart
+antwoordt, en geeft **geen** reset: de RESET-lijn is gedeeld met de knoppen- en
+lampenprint.
+
+Omdat de polariteit nog niet vaststaat, werkt dit script met de latchwaarde van
+de MCP23S17 en niet met "aan" en "uit". Je zet een bit en meet zelf wat er op de
+klem gebeurt. Bij het starten blijven alle pinnen ingang, zodat het aansluiten en
+controleren zelf niets kan aansturen.
+
+| Commando | Werking |
+|-------------------|------------------------------------------------------|
+| `enkel <pin>` | alleen die pin wordt uitgang, de overige 15 blijven ingang |
+| `l <pin> 0\|1` | de latch van een pin zetten |
+| `rust 0\|1` | vastleggen welke latchwaarde de uitgang uit zet |
+| `uitgang` | alle 16 pinnen uitgang, latches op de rustwaarde |
+| `alles 0\|1` | alle latches tegelijk |
+| `ingang` | alle pinnen terug naar ingang |
+| `status` | IODIR, OLAT en GPIO zoals de kaart ze teruggeeft |
+
+De volgorde om de polariteit vast te stellen: sluit de kaart aan op 5 V en 48 V
+met de voeding stroombegrensd, start het script, typ `enkel 0`, en meet de klem
+bij `l 0 0` en bij `l 0 1`. De latchwaarde die 0 V oplevert, leg je vast met
+`rust`. Pas daarna is `uitgang` veilig, want dan weet het script welke waarde de
+kaart in rust zet. Zolang `rust` niet klopt doet `uitgang` precies wat de
+waarschuwing hierboven beschrijft.
 
 ## analoog/ - de DAC-print
 
