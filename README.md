@@ -52,6 +52,8 @@ De printplaten die op de Raspberry Pi worden aangesloten zijn:
 - De voedingsbeveiliging (deelsysteem 2), die de 24 VDC van de hoofdvoeding omzet naar een 5 VDC- en een 48 VDC-busrail, en die de kortsluitbeveiliging en de noodstop bevat.
 - De digitale outputmodule (deelsysteem 6), die de digitale signalen van de Raspberry Pi omzet naar schakelspanningen van 48 V. Omdat de nagebootste deelschakelingen tussen de 50 en 100 contacten bevatten en de Raspberry Pi zelf maar 28 bruikbare GPIO-pinnen heeft, wordt gebruikgemaakt van MCP23S17 I/O-expanders op de SPI-bus. Acht expanders leveren samen 128 digitale uitgangen.
 
+Niet elke uitgang van de digitale outputmodules werkt; welke dat zijn verschilt per kaart. Dat is een eigenschap van de gebouwde hardware en wordt bijgehouden in `pcb_tests/digitaal/defecte-pinnen.json`, met het binaire kaartadres als sleutel en de pinnummers die geen spanning geven als waarde. Op kaart `001` zijn dat de pinnen 7, 8, 13, 14 en 15. `digital.py` leest dat bestand en waarschuwt zodra je zo'n uitgang aanstuurt. Houd de lijst bij zodra er een kaart wordt doorgemeten of vervangen.
+
 De volledige onderbouwing van de printplaten, inclusief de schematische tekeningen, de componentkeuzes en de berekeningen, is te vinden in het projectdocument.
 
 > **Let op:** de software in deze repository stuurt op dit moment de GPIO-pinnen van de Raspberry Pi rechtstreeks aan via de bibliotheek `RPi.GPIO`. De aansturing via de MCP23S17 I/O-expanders is nog niet in de software verwerkt. Het aantal beschikbare uitgangen is daarmee voorlopig beperkt tot de 26 pinnen die in `constants.py` onder `VALID_GPIO_PINS` staan.

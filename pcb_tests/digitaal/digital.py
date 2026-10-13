@@ -4,13 +4,16 @@ digital.py - Bedient de digitale 48V-uitgangen van deelsysteem 6.
 RET N.V. | Said Keteldijk (1045604)
 """
 
+import json
 import sys
+from pathlib import Path
 
 import spidev
 import RPi.GPIO as GPIO
 
 PCB_ADRESSEN = ("001", "010", "011", "100")
 RESET_PIN = 25
+DEFECT_BESTAND = Path(__file__).with_name("defecte-pinnen.json")
 
 IODIRA, IODIRB = 0x00, 0x01
 IPOLA = 0x02
@@ -19,6 +22,22 @@ OLATA, OLATB = 0x14, 0x15
 HAEN = 0x08
 
 KLEM_HOOG_BIJ_LATCH = 0
+
+
+def lees_defecte_pinnen() -> dict:
+    try:
+        ruw = json.loads(DEFECT_BESTAND.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError) as fout:
+        print(f"Kan {DEFECT_BESTAND.name} niet lezen: {fout}")
+        return {}
+    pinnen = {}
+    for adres, lijst in ruw.items():
+        if adres.startswith("_"):
+            continue
+        pinnen[adres] = sorted({int(p) for p in lijst if 0 <= int(p) <= 15})
+    return pinnen
 
 
 def reset_vrijgeven() -> None:
@@ -106,6 +125,7 @@ class DigitaleUitgangen:
     def __init__(self, adressen=PCB_ADRESSEN, spi_bus: int = 0, spi_ce: int = 0,
                  spi_hz: int = 1_000_000):
         reset_vrijgeven()
+        self.defect = lees_defecte_pinnen()
 
         self.spi = spidev.SpiDev()
         self.spi.open(spi_bus, spi_ce)
@@ -145,10 +165,17 @@ class DigitaleUitgangen:
         for mcp in self.pcbs.values():
             mcp.alles(False)
 
+    def defecte_pinnen(self, pcb: str) -> list:
+        return self.defect.get(pcb, [])
+
     def toon_status(self) -> None:
         for pcb, mcp in self.pcbs.items():
             actief = [i for i, s in enumerate(mcp.status()) if s]
-            print(f"  PCB {pcb}: 48V op {actief if actief else '-'}")
+            kapot = self.defecte_pinnen(pcb)
+            regel = f"  PCB {pcb}: 48V op {actief if actief else '-'}"
+            if kapot:
+                regel += f"   defect: {kapot}"
+            print(regel)
 
     def sluit(self) -> None:
         self.spi.close()
@@ -184,6 +211,10 @@ def main() -> None:
         return
 
     print(f"Gevonden kaarten: {list(du.pcbs)}")
+    for pcb in du.pcbs:
+        kapot = du.defecte_pinnen(pcb)
+        if kapot:
+            print(f"  kaart {pcb}: pin {kapot} staat als defect genoteerd")
     if du.ontbreekt:
         print(f"Geen antwoord van: {du.ontbreekt} (overgeslagen)")
     klem = "laag" if KLEM_HOOG_BIJ_LATCH == 0 else "hoog"
@@ -224,14 +255,20 @@ def main() -> None:
                 hoog = stand == "hoog"
                 if pin == "alles":
                     du.kaart_alles(pcb, hoog)
-                    print(f"PCB {pcb}, alle 16 uitgangen -> {'48V' if hoog else '0V'}")
+                    kapot = du.defecte_pinnen(pcb)
+                    staart = f"  (behalve {kapot}, defect)" if kapot and hoog else ""
+                    print(f"PCB {pcb}, alle 16 uitgangen -> "
+                          f"{'48V' if hoog else '0V'}{staart}")
                 else:
                     nummer = int(pin)
                     if hoog:
                         du.set_hoog(pcb, nummer)
                     else:
                         du.set_laag(pcb, nummer)
-                    print(f"PCB {pcb}, pin {nummer} -> {'48V' if hoog else '0V'}")
+                    extra = ("   LET OP: staat als defect genoteerd"
+                             if nummer in du.defecte_pinnen(pcb) else "")
+                    print(f"PCB {pcb}, pin {nummer} -> "
+                          f"{'48V' if hoog else '0V'}{extra}")
             except ValueError as e:
                 print(f"Fout: {e}")
     except KeyboardInterrupt:

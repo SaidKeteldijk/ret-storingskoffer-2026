@@ -31,6 +31,7 @@ hoofdmap van `pcb_tests`.
 | `knoppen_lampen/` | `semi-integratietest-knop-lamp.py` | Knop bedient de bijbehorende lamp |
 | `digitaal/` | `digital.py` | De 48V-uitgangskaarten per pin bedienen |
 | `digitaal/` | `digitale-print.py` | Vervallen: `digital.py` doet dit nu zelf |
+| `digitaal/` | `defecte-pinnen.json` | Welke uitgangen per kaart niet werken |
 | `analoog/` | `dac-tester.py` | De twee DAC8564's van een losse print: 4-20 mA en 0-48 V |
 | `analoog/` | `koffer-analoog.py` | De acht klemmen U1-U8 en lussen I1-I8 over beide printen |
 
@@ -196,6 +197,48 @@ klem. Het script meldt bij het starten welke aanname actief is.
 > plaats van 48 V, zet de constante dan op `1`; de rest van het script klopt dan
 > meteen ook. Zolang de aanname verkeerd staat, zet `init_als_output()` de
 > uitgangen bij het starten juist op 48 V in plaats van uit.
+
+### De defecte uitgangen per kaart
+
+Niet elke uitgang op elke kaart werkt. Welke dat zijn verschilt per kaart, en het
+is iets van de gebouwde hardware en niet van het ontwerp. Die bevindingen staan
+in `digitaal/defecte-pinnen.json`, zodat ze bij de kaarten blijven staan in
+plaats van in iemands hoofd:
+
+```json
+{
+  "001": [7, 8, 13, 14, 15],
+  "010": [],
+  "011": [],
+  "100": []
+}
+```
+
+De sleutel is het binaire kaartadres, de lijst zijn de pinnummers van 0 tot en
+met 15 die geen spanning geven. Een lege lijst betekent dat de kaart volledig
+getest is en goed werkt; staat een adres er nog niet in, dan is die kaart nog
+niet nagelopen. Vul de lijst aan zodra je een kaart doormeet.
+
+`digital.py` leest het bestand bij het starten en meldt per gevonden kaart welke
+pinnen als defect genoteerd staan:
+
+```console
+Gevonden kaarten: ['001']
+  kaart 001: pin [7, 8, 13, 14, 15] staat als defect genoteerd
+```
+
+Het script blijft die pinnen gewoon aansturen, want je wilt een bevinding kunnen
+herhalen. Het zet er alleen een waarschuwing bij:
+
+```console
+> 001 7 hoog
+PCB 001, pin 7 -> 48V   LET OP: staat als defect genoteerd
+```
+
+In `status` staan ze achteraan de regel, en bij `<pcb> alles hoog` wordt gemeld
+welke er niet mee omhoog zullen komen. Let op dat `status` de latch van de chip
+teruggeeft en niet de klemspanning: een defecte pin staat daar dus als actief
+terwijl er niets uit komt. Dat verschil is juist de reden dat die lijst bestaat.
 
 ## analoog/ - de DAC-print
 
