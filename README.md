@@ -445,7 +445,7 @@ te kijken als er iets niet goed gaat.
 
 # De projectbestanden
 
-Deze repository bevat alleen de software. Alle overige projectbestanden staan op de SharePoint-pagina van de afdeling Infraservices Energievoorziening, in de map `Said Keteldijk - Afstudeerproject - storingskoffer`. Daar is onder meer te vinden:
+Deze repository bevat alleen de software. Alle overige projectbestanden staan op de SharePoint-pagina van de afdeling Infraservices Energievoorziening, in de map [Said Keteldijk - Afstudeerproject - storingskoffer](https://retnv.sharepoint.com/teams/001069/Gedeelde%20%20documenten/Forms/AllItems.aspx?id=%2Fteams%2F001069%2FGedeelde%20%20documenten%2Fstagiaire%2FSaid%20Keteldijk%20%2D%20Afstudeerproject%20%2D%20storingskoffer). Daar is onder meer te vinden:
 
 - `4-20mA PCB Autodesk Fusion 360 project` – het ontwerp van de stroomlusprint
 - `48V output printplaat Autodesk Fusion 360` – het ontwerp van de digitale uitgangskaart
@@ -458,7 +458,7 @@ Deze repository bevat alleen de software. Alle overige projectbestanden staan op
 
 De test- en instructievideo's horen bij de unittesten uit het verslag en laten zien hoe de koffer bediend wordt. Wie de koffer overneemt of het project voortzet, begint daar: de video's leggen vast wat in tekst niet goed over te brengen is.
 
-Toegang tot de map loopt via de afdeling Energievoorziening van de RET (EV).
+De link werkt alleen voor wie toegang heeft tot de teamsite van de afdeling. Die toegang loopt via de Energievoorziening van de RET (EV).
 
 # Inloggegevens
 
