@@ -7,8 +7,10 @@ RET N.V. | Said Keteldijk (1045604)
 import sys
 
 import spidev
+import RPi.GPIO as GPIO
 
 MCP_ADDR = 0b001
+RESET_PIN = 25
 SPI_BUS = 0
 SPI_CS = 0
 SPI_SPEED = 1_000_000
@@ -19,6 +21,13 @@ IOCON = 0x0A
 GPIOA, GPIOB = 0x12, 0x13
 OLATA, OLATB = 0x14, 0x15
 HAEN = 0x08
+
+
+def reset_vrijgeven():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+    GPIO.setup(RESET_PIN, GPIO.OUT, initial=GPIO.HIGH)
+    GPIO.output(RESET_PIN, GPIO.HIGH)
 
 
 class Kaart:
@@ -139,6 +148,8 @@ def main():
     if len(sys.argv) > 1:
         adres = int(sys.argv[1], 2) if set(sys.argv[1]) <= {"0", "1"} else int(sys.argv[1])
 
+    reset_vrijgeven()
+
     spi = spidev.SpiDev()
     spi.open(SPI_BUS, SPI_CS)
     spi.max_speed_hz = SPI_SPEED
@@ -149,13 +160,13 @@ def main():
         kaart.zet_haen()
         if not kaart.antwoordt():
             print(f"Geen antwoord van een kaart op adres {adres:03b}.")
-            print("Controleer de DIP-stand, de 5V-voeding, de SPI-bedrading en")
-            print("of de RESET-lijn hoog staat.")
+            print("Controleer de DIP-stand, de 5V-voeding en de SPI-bedrading.")
+            print("De RESET-lijn is door dit script al hoog gezet.")
             return 1
 
         kaart.lees_latches()
-        print(f"Kaart op adres {adres:03b} antwoordt. Er is geen reset gegeven,")
-        print("dus de knoppen- en lampenprint blijft ongemoeid.")
+        print(f"Kaart op adres {adres:03b} antwoordt. RESET is hoog gezet zonder")
+        print("puls, dus de knoppen- en lampenprint blijft ongemoeid.")
         toon(kaart)
         help_tekst(kaart)
 

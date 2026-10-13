@@ -187,9 +187,16 @@ python3 digitaal/digitale-print.py          # adres 001
 python3 digitaal/digitale-print.py 010      # een andere kaart
 ```
 
-Het script zet zelf HAEN aan, controleert met een testpatroon of de kaart
-antwoordt, en geeft **geen** reset: de RESET-lijn is gedeeld met de knoppen- en
-lampenprint.
+Het script zet zelf HAEN aan en controleert met een testpatroon of de kaart
+antwoordt. De RESET-lijn wordt hoog gezet maar krijgt **geen puls**: die lijn is
+gedeeld met de knoppen- en lampenprint, en een puls zou daar de uitgangen laten
+zweven.
+
+> **Let op:** `scan.py` eindigt met `GPIO.cleanup()`, waarna GPIO25 weer ingang
+> wordt. Zonder pull-up zakt RESET dan weg en houden alle MCP23S17's zich stil.
+> Daarom moet elk script dat met de kaarten praat de lijn zelf hoog zetten, en
+> is een scan die net gelukt is geen garantie dat het volgende script de kaart
+> nog vindt. `digital.py` doet dit nog niet.
 
 Omdat de polariteit nog niet vaststaat, werkt dit script met de latchwaarde van
 de MCP23S17 en niet met "aan" en "uit". Je zet een bit en meet zelf wat er op de
