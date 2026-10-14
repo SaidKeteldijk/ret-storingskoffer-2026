@@ -24,14 +24,13 @@ hoofdmap van `pcb_tests`.
 | Map | Script | Test |
 |-------------------|------------------------------------|--------------------------------------------------|
 | hoofdmap | `scan.py` | Zoekt MCP23S17's op CE0, adres 0 t/m 7 |
-| hoofdmap | `test_io_board.py` | Ouder testgereedschap, zie waarschuwing hieronder |
+| `digitaal/` | `test_io_board.py` | Losse MCP23S17-kaarten doormeten per pin of poort |
 | `knoppen_lampen/` | `lightsout.py` | Zet de lampen op de knoppen/lampen-PCB uit |
 | `knoppen_lampen/` | `lampen-test.py` | Lampen Q1..Q8 los aansturen |
 | `knoppen_lampen/` | `knoppen-test.py` | Knoppen S1..S8 uitlezen |
 | `knoppen_lampen/` | `semi-integratietest-knop-lamp.py` | Knop bedient de bijbehorende lamp |
 | `digitaal/` | `digital.py` | De 48V-uitgangskaarten per pin bedienen |
-| `digitaal/` | `digitale-print.py` | Vervallen: `digital.py` doet dit nu zelf |
-| `digitaal/` | `defecte-pinnen.json` | Welke uitgangen per kaart niet werken |
+| `digitaal/` | `uitgangen.json` | De kaartvolgorde, de defecte pinnen en de Dx-nummering |
 | `analoog/` | `dac-tester.py` | De twee DAC8564's van een losse print: 4-20 mA en 0-48 V |
 | `analoog/` | `koffer-analoog.py` | De acht klemmen U1-U8 en lussen I1-I8 over beide printen |
 
@@ -46,11 +45,10 @@ cd digitaal && python3 digital.py
 Begin altijd met `scan.py`. Dat script raakt geen uitgangen aan en laat zien
 welke kaarten de bus ziet en op welk adres.
 
-> **Waarschuwing bij `test_io_board.py`:** dit script doet bij elke aanroep een
-> hardware-reset en zet bij het afsluiten alle acht adressen terug naar ingang.
-> De RESET-lijn is gedeeld met alle vijf de MCP23S17's, en zwevende ingangen
-> laten de 48V-uitgangen aanslaan. Het is geschreven toen er nog één losse
-> kaart was. Gebruik voor de opgebouwde koffer `scan.py` en `digital.py`.
+> **Let op bij `test_io_board.py`:** dit is gereedschap om een losse kaart per
+> pin door te meten, niet om de opgebouwde koffer te bedienen. Het kent de
+> defecte uitgangen niet en spreekt ook adres `000` aan, de knoppen- en
+> lampenprint. Gebruik voor de 48V-kaarten in de koffer `digital.py`.
 
 ## Voorbereiding
 
@@ -149,20 +147,26 @@ adres `000`.
 
 ## digitaal/ - de 48V-uitgangskaarten
 
-Vier MCP23S17's op CE0, hardware-adres `001` tot en met `100`. Adres `000` is de
-knoppen/lampenprint en wordt niet aangeraakt.
+MCP23S17's op CE0 met hardware-adres `001` en hoger. Adres `000` is de
+knoppen/lampenprint en wordt nooit aangeraakt; `digital.py` begint bewust bij
+`001`, want een schrijfactie naar `000` zou daar alle lampen aanzetten.
+
+Er zijn nu vijf kaarten gebouwd, op `001` tot en met `101`. Het script gaat niet
+van een vast aantal uit maar zoekt `001` tot en met `111` af en houdt over wat
+antwoordt, zodat een kaart erbij geen aanpassing in de code vraagt.
 
 Pinnummering: 0 tot en met 15, waarbij 0-7 = GPIOA0-7 en 8-15 = GPIOB0-7.
 PCB-adressen geef je binair op, net als in de scan: `010` is adres 2.
 
 ```console
-python3 digitaal/digital.py              # zoekt 001 t/m 100
+python3 digitaal/digital.py              # zoekt 001 t/m 111
 python3 digitaal/digital.py 001          # alleen die ene kaart
 ```
 
 Het script zet de RESET-lijn hoog **zonder puls**, zet HAEN aan, en controleert
-per adres met een testpatroon of er een kaart antwoordt. Kaarten die niet
-antwoorden worden gemeld en overgeslagen in plaats van stilzwijgend meegenomen.
+per adres met een testpatroon of er een kaart antwoordt. Alleen de kaarten die
+antwoorden worden gebruikt. Geef je zelf adressen op, dan meldt het script welke
+daarvan niet gevonden zijn; bij het automatisch zoeken blijft dat achterwege.
 
 > **Let op:** `scan.py` eindigt met `GPIO.cleanup()`, waarna GPIO25 weer ingang
 > wordt. Zonder pull-up zakt RESET dan weg en houden alle MCP23S17's zich stil:
@@ -186,59 +190,141 @@ denkt, maar wat de kaart werkelijk vasthoudt.
 De polariteit van de uitgangstrap staat als losse constante bovenin:
 
 ```python
-KLEM_HOOG_BIJ_LATCH = 0
+KLEM_HOOG_BIJ_LATCH = 1
 ```
 
-Nul betekent: de uitgangstrap is inverterend, een latch van 0 geeft 48 V op de
-klem. Het script meldt bij het starten welke aanname actief is.
+Deze is gemeten aan de gebouwde kaarten en niet langer een aanname: de
+uitgangstrap is **niet** inverterend. Een latch van 1 geeft 48 V op de klem, een
+latch van 0 geeft 0 V. De eerdere aanname in dit project ging uit van het
+omgekeerde; die klopte niet. Het script meldt bij het starten welke waarde
+actief is.
 
-> **Let op:** deze polariteit is nog niet gemeten. Uit de metingen aan de kaarten
-> kwam de omgekeerde conclusie (latch 1 = 48 V). Geeft `001 0 hoog` straks 0 V in
-> plaats van 48 V, zet de constante dan op `1`; de rest van het script klopt dan
-> meteen ook. Zolang de aanname verkeerd staat, zet `init_als_output()` de
-> uitgangen bij het starten juist op 48 V in plaats van uit.
+Voor de bediening maakt het niets uit: `hoog` is altijd 48 V en `laag` altijd
+0 V. De constante vertaalt dat naar de latch, zodat de inversie op één plek
+staat.
 
-### De defecte uitgangen per kaart
+### De uitgangen en hun nummering
 
-Niet elke uitgang op elke kaart werkt. Welke dat zijn verschilt per kaart, en het
-is iets van de gebouwde hardware en niet van het ontwerp. Die bevindingen staan
-in `digitaal/defecte-pinnen.json`, zodat ze bij de kaarten blijven staan in
-plaats van in iemands hoofd:
+Vijf van de zestien uitgangen doen het niet, en dat geldt op elke kaart. In de
+telling van de MCP23S17, die bij 0 begint, zijn dat pin 6, 7, 12, 13 en 14; op
+de printopdruk, die bij 1 begint, staan ze als 7, 8, 13, 14 en 15. Omdat het op
+alle vijf de kaarten dezelfde pinnen zijn, is het geen defect van een losse
+kaart maar iets dat in het ontwerp of de print zelf zit. Per kaart blijven er elf
+bruikbare uitgangen over, en met vijf kaarten 55 in plaats van 80.
+
+Dat staat samen met de kaartvolgorde in `digitaal/uitgangen.json`:
 
 ```json
 {
-  "001": [7, 8, 13, 14, 15],
-  "010": [],
-  "011": [],
-  "100": []
+  "kaarten": ["001", "010", "011", "100", "101"],
+  "defect_alle_kaarten": [6, 7, 12, 13, 14],
+  "defect_per_kaart": {}
 }
 ```
 
-De sleutel is het binaire kaartadres, de lijst zijn de pinnummers van 0 tot en
-met 15 die geen spanning geven. Een lege lijst betekent dat de kaart volledig
-getest is en goed werkt; staat een adres er nog niet in, dan is die kaart nog
-niet nagelopen. Vul de lijst aan zodra je een kaart doormeet.
+Onder `defect_alle_kaarten` staan de pinnen die op geen enkele kaart werken.
+Krijgt een losse kaart er later een eigen probleem bij, dan komt dat onder
+`defect_per_kaart` te staan met het binaire kaartadres als sleutel, bijvoorbeeld
+`"010": [3]`. De twee lijsten worden bij elkaar opgeteld.
 
-`digital.py` leest het bestand bij het starten en meldt per gevonden kaart welke
-pinnen als defect genoteerd staan:
+**De Dx-nummering.** Op de koffer zijn alleen de werkende uitgangen
+doorverbonden, en die zijn doorlopend genummerd als `D1` tot en met `D55`. De
+volgorde volgt de kaarten uit `kaarten` en per kaart de pinnummers oplopend,
+waarbij de defecte pinnen worden overgeslagen:
+
+| Kaart | MCP-pin | Klem |
+|-------|---------|------|
+| 001 | 5 | D6 |
+| 001 | 8 | D7 |
+| 001 | 15 | D11 |
+| 010 | 0 | D12 |
+| 101 | 15 | D55 |
+
+Daarom staat de kaartvolgorde in hetzelfde bestand: zonder vaste volgorde zou de
+Dx-nummering verschuiven zodra er een kaart niet antwoordt. Dit bestand is de
+enige plek waar die verdeling vastligt; `digital.py` en `koffer_digitaal.py` in
+de hoofdmap lezen het allebei.
+
+`digital.py` werkt met de kaart en het MCP-pinnummer en zet het klemnummer erbij:
 
 ```console
-Gevonden kaarten: ['001']
-  kaart 001: pin [7, 8, 13, 14, 15] staat als defect genoteerd
+> 001 8 hoog
+PCB 001, pin 8 (D7) -> 48V
 ```
 
-Het script blijft die pinnen gewoon aansturen, want je wilt een bevinding kunnen
-herhalen. Het zet er alleen een waarschuwing bij:
+De defecte pinnen worden niet aangestuurd. Een poging wordt geweigerd:
 
 ```console
-> 001 7 hoog
-PCB 001, pin 7 -> 48V   LET OP: staat als defect genoteerd
+> 001 6 hoog
+Fout: pin 6 van PCB 001 werkt niet en wordt niet aangestuurd
 ```
 
-In `status` staan ze achteraan de regel, en bij `<pcb> alles hoog` wordt gemeld
-welke er niet mee omhoog zullen komen. Let op dat `status` de latch van de chip
-teruggeeft en niet de klemspanning: een defecte pin staat daar dus als actief
-terwijl er niets uit komt. Dat verschil is juist de reden dat die lijst bestaat.
+Ook `<pcb> alles hoog` en `aan` slaan ze over; die zetten alleen de werkende
+uitgangen op 48 V en melden welke overgeslagen zijn. `aan` telt daarbij de
+werkelijk aangestuurde uitgangen, dus 55 en niet 80. In `status` staan de
+defecte pinnen achteraan de regel als geheugensteun. Let op dat `status` de
+latch van de chip teruggeeft en niet de klemspanning: een defecte pin zou daar
+als actief kunnen staan terwijl er niets uit komt.
+
+### test_io_board.py
+
+Gereedschap om een enkele MCP23S17 per pin of per poort door te meten, los van
+de koffer. Het werkt op elk adres van 0 tot en met 7 en kent de defecte
+uitgangen uit `uitgangen.json` niet; daarvoor is `digital.py` er.
+De aansluiting op de Raspberry Pi header is:
+
+| Signaal | Header | GPIO |
+|-----------|--------|--------|
+| SCK | pin 23 | GPIO11 |
+| SI (MOSI) | pin 19 | GPIO10 |
+| SO (MISO) | pin 21 | GPIO9 |
+| CS (CE0) | pin 24 | GPIO8 |
+| RESET | pin 22 | GPIO25 |
+| INT-NET | pin 18 | GPIO24 |
+| 3V3 | pin 17 | - |
+| GND | pin 20 | - |
+
+Elke kaart krijgt met de DIP-schakelaars een eigen adres van 0 tot en met 7.
+Het script zet bij het opstarten hardware-adressering (HAEN) aan op alle acht
+adressen, en zet de RESET-lijn hoog **zonder puls**, zodat de knoppen- en
+lampenprint er niet van in reset gaat.
+
+De beschikbare commando's:
+
+```console
+python3 digitaal/test_io_board.py scan              # zoek kaarten op adres 0 t/m 7
+python3 digitaal/test_io_board.py walk 0            # loop 1 bit langs GPA0..GPB7
+python3 digitaal/test_io_board.py write 0 A 0x0F    # schrijf een byte naar poort A
+python3 digitaal/test_io_board.py read 0            # lees beide poorten als ingang
+python3 digitaal/test_io_board.py read 0 --continu  # blijf lezen tot Ctrl-C
+python3 digitaal/test_io_board.py blink 0 A 3       # knipper alleen GPA3
+python3 digitaal/test_io_board.py blink 0 A         # knipper de hele poort A
+python3 digitaal/test_io_board.py blink 0 AB --delay 2   # alle 16 pinnen, 2 s aan / 2 s uit
+python3 digitaal/test_io_board.py allon 0           # alle 16 pinnen hoog, vasthouden
+python3 digitaal/test_io_board.py allon --alle      # idem op alle gevonden kaarten
+```
+
+Begin altijd met `scan`. Worden er geen kaarten gevonden, controleer dan de
+voeding, de RESET-lijn en de DIP-standen voordat je verder zoekt.
+
+#### Uitgangen blijven alleen staan zolang het script draait
+
+Bij het afsluiten zet het script de pinnen terug naar ingang van de kaarten die
+het zelf heeft aangestuurd. Dat is bewust zo: een testtool mag geen uitgangen
+laten staan waar niemand meer zicht op heeft. Kaarten die het niet heeft
+aangeraakt blijven ongemoeid.
+
+Het gevolg is wel dat `write` geen blijvend effect heeft. Dat commando zet de
+byte weg en sluit meteen daarna af, waardoor de uitgang direct weer wegvalt.
+Gebruik `write` dus alleen samen met een oscilloscoop, en gebruik `allon`,
+`walk` of `blink` wanneer je rustig met een multimeter wilt meten: die blijven
+lopen tot je Ctrl-C geeft.
+
+> **Voorzichtig:** `walk`, `write`, `blink` en `allon` zetten de pinnen van de gekozen
+> kaart als uitgang. Doe dat niet op een kaart waar iets op de ingangen is
+> aangesloten: twee uitgangen die elkaar tegenwerken beschadigen de MCP23S17.
+> Het script zet bij het afsluiten de gebruikte pinnen terug naar ingang, ook na
+> Ctrl-C.
 
 ## analoog/ - de DAC-print
 
@@ -298,62 +384,6 @@ overstroom drijft.
 > spanning gaf. Meet VOUTA van U3: 1,25 V betekent dat `VFS = 2.5` klopt,
 > 2,50 V betekent dat de fout in de booster zit en dat `scale` en R18 nagerekend
 > moeten worden.
-
-## test_io_board.py
-
-Test de MCP23S17 I/O-expanders van deelsysteem 6. De aansluiting op de
-Raspberry Pi header is:
-
-| Signaal | Header | GPIO |
-|-----------|--------|--------|
-| SCK | pin 23 | GPIO11 |
-| SI (MOSI) | pin 19 | GPIO10 |
-| SO (MISO) | pin 21 | GPIO9 |
-| CS (CE0) | pin 24 | GPIO8 |
-| RESET | pin 22 | GPIO25 |
-| INT-NET | pin 18 | GPIO24 |
-| 3V3 | pin 17 | - |
-| GND | pin 20 | - |
-
-Elke kaart krijgt met de DIP-schakelaars een eigen adres van 0 tot en met 7.
-Het script zet bij het opstarten hardware-adressering (HAEN) aan; direct na een
-reset luistert elke kaart namelijk nog naar elk adres, waardoor die ene
-schrijfactie de hele keten bereikt.
-
-De beschikbare commando's:
-
-```console
-python3 test_io_board.py scan              # zoek kaarten op adres 0 t/m 7
-python3 test_io_board.py walk 0            # loop 1 bit langs GPA0..GPB7
-python3 test_io_board.py write 0 A 0x0F    # schrijf een byte naar poort A
-python3 test_io_board.py read 0            # lees beide poorten als ingang
-python3 test_io_board.py read 0 --continu  # blijf lezen tot Ctrl-C
-python3 test_io_board.py blink 0 A 3       # knipper alleen GPA3
-python3 test_io_board.py blink 0 A         # knipper de hele poort A
-python3 test_io_board.py blink 0 AB --delay 2   # alle 16 pinnen, 2 s aan / 2 s uit
-python3 test_io_board.py allon 0           # alle 16 pinnen hoog, vasthouden
-python3 test_io_board.py allon --alle      # idem op alle gevonden kaarten
-```
-
-Begin altijd met `scan`. Worden er geen kaarten gevonden, controleer dan de
-voeding, de RESET-lijn en de DIP-standen voordat je verder zoekt.
-
-### Uitgangen blijven alleen staan zolang het script draait
-
-Bij het afsluiten zet het script alle pinnen van alle acht adressen terug naar
-ingang. Dat is bewust zo: een testtool mag geen uitgangen laten staan waar
-niemand meer zicht op heeft.
-
-Het gevolg is wel dat `write` geen blijvend effect heeft. Dat commando zet de
-byte weg en sluit meteen daarna af, waardoor de uitgang direct weer wegvalt.
-Gebruik `write` dus alleen samen met een oscilloscoop, en gebruik `allon`,
-`walk` of `blink` wanneer je rustig met een multimeter wilt meten: die blijven
-lopen tot je Ctrl-C geeft.
-
-> **Voorzichtig:** `walk`, `write`, `blink` en `allon` zetten de pinnen van de gekozen
-> kaart als uitgang. Doe dat niet op een kaart waar iets op de ingangen is
-> aangesloten: twee uitgangen die elkaar tegenwerken beschadigen de MCP23S17.
-> Het script zet bij het afsluiten alle pinnen terug naar ingang, ook na Ctrl-C.
 
 ## Meetresultaten
 

@@ -52,7 +52,7 @@ De printplaten die op de Raspberry Pi worden aangesloten zijn:
 - De voedingsbeveiliging (deelsysteem 2), die de 24 VDC van de hoofdvoeding omzet naar een 5 VDC- en een 48 VDC-busrail, en die de kortsluitbeveiliging en de noodstop bevat.
 - De digitale outputmodule (deelsysteem 6), die de digitale signalen van de Raspberry Pi omzet naar schakelspanningen van 48 V. Omdat de nagebootste deelschakelingen tussen de 50 en 100 contacten bevatten en de Raspberry Pi zelf maar 28 bruikbare GPIO-pinnen heeft, wordt gebruikgemaakt van MCP23S17 I/O-expanders op de SPI-bus. Acht expanders leveren samen 128 digitale uitgangen.
 
-Niet elke uitgang van de digitale outputmodules werkt; welke dat zijn verschilt per kaart. Dat is een eigenschap van de gebouwde hardware en wordt bijgehouden in `pcb_tests/digitaal/defecte-pinnen.json`, met het binaire kaartadres als sleutel en de pinnummers die geen spanning geven als waarde. Op kaart `001` zijn dat de pinnen 7, 8, 13, 14 en 15. `digital.py` leest dat bestand en waarschuwt zodra je zo'n uitgang aanstuurt. Houd de lijst bij zodra er een kaart wordt doorgemeten of vervangen.
+Er zijn vijf digitale outputmodules gebouwd, op hardware-adres `001` tot en met `101`. Van de zestien uitgangen per kaart werken er vijf niet: in de telling van de MCP23S17 zijn dat pin 6, 7, 12, 13 en 14, op de printopdruk 7, 8, 13, 14 en 15. Dat is op elke kaart dezelfde set, dus het ligt niet aan een losse print maar aan het ontwerp. Er blijven elf bruikbare uitgangen per kaart over, samen 55 in plaats van 80. Alleen die 55 zijn op de koffer doorverbonden en ze heten `D1` tot en met `D55`; de verdeling staat in `pcb_tests/digitaal/uitgangen.json`.
 
 De volledige onderbouwing van de printplaten, inclusief de schematische tekeningen, de componentkeuzes en de berekeningen, is te vinden in het projectdocument.
 
@@ -74,6 +74,7 @@ De grafische interface is gebouwd met PyQt5. De schakelingen worden niet als afb
 | `display.py` | Bepaalt op welk scherm welk venster terechtkomt. |
 | `koffer_io.py` | De aansturing van de knoppen- en lampenprint via SPI. |
 | `koffer_dac.py` | De aansturing van de spanningsklemmen U1 tot en met U8 via de DAC-printen. |
+| `koffer_digitaal.py` | De aansturing van de digitale 48V-uitgangen D1 tot en met D55. |
 | `schermtest.py` | Diagnose: toont welke schermen Qt ziet en hoe ze verdeeld worden. |
 | `simulator.py` | De elektrische simulatie van de schakeling. |
 | `gpio_manager.py`| De koppeling tussen de simulatie en de GPIO-pinnen. |
@@ -219,6 +220,7 @@ Elk component kan aan een kanaal van de knoppen- en lampenprint gekoppeld worden
 |------------------------------------------|----------|-----------------------------------------|
 | Schakelaar, 2-weg wisselschakelaar, relaiscontact, 2-weg relaiscontact | S1 .. S8 | De fysieke knop stuurt de simulatie aan |
 | Lamp, motor, relaisspoel | Q1 .. Q8 | De simulatie stuurt de fysieke lamp aan |
+| Lamp, motor, relaisspoel | D1 .. D55 | De simulatie schakelt 48 V op een klem |
 | Elk component, ook een net label | U1 .. U8 | De simulatie zet een spanning op de meetklem |
 
 Elk kanaal hoort bij één component; de dialoog weigert te sluiten zolang twee componenten hetzelfde kanaal delen.
@@ -236,6 +238,39 @@ De print zit op de SPI-bus (CE0) op hardware-adres `000`. De lampen Q1 tot en me
 De aansturing zit in `koffer_io.py` en doet bewust **geen** hardware-reset: de RESET-lijn is gedeeld met de digitale 48V-kaarten en zou hun uitgangen laten zweven. Bij het starten van de simulatie wordt de print ingesteld met de latch eerst laag en pas daarna de richting op uitgang, zodat er geen lamp kort aanflitst. Bij het stoppen gaan alle lampen uit.
 
 Tijdens de simulatie worden de knoppen elke 50 ms uitgelezen. Draait de app op een computer zonder `spidev`, dan wordt automatisch een mockversie van de print geladen. De volledige app blijft dan werken en de knoppen kunnen met de muis omgeschakeld worden via het monitorpaneel onderin het scherm. Hierdoor kan de software volledig op een laptop ontwikkeld en getest worden.
+
+# De digitale uitgangen D1 tot en met D55
+
+Een component kan ook aan een digitale 48V-uitgang gekoppeld worden. Die uitgangen zitten op de MCP23S17-kaarten van deelsysteem 6 en schakelen een echte 48 V op een klem van de koffer, zodat de simulatie een contactor, een signaallamp of een andere last in een oefenpaneel kan aansturen.
+
+De koppeling werkt hetzelfde als bij de lampen: zodra het component in de simulatie stroom voert, gaat de uitgang aan. Het verschil is alleen waar het signaal naartoe gaat.
+
+## De nummering
+
+De klemmen heten `D1` tot en met `D55` en zijn doorlopend genummerd over de vijf kaarten heen. Op de koffer zijn alleen de werkende uitgangen doorverbonden, dus de defecte pinnen worden in die telling overgeslagen. De eerste kaart levert `D1` tot en met `D11`, de tweede `D12` tot en met `D22`, en zo verder.
+
+| Klem | Kaart | MCP-pin |
+|------|-------|---------|
+| D1 | 001 | 0 |
+| D6 | 001 | 5 |
+| D7 | 001 | 8 |
+| D11 | 001 | 15 |
+| D12 | 010 | 0 |
+| D55 | 101 | 15 |
+
+De verdeling staat in `pcb_tests/digitaal/uitgangen.json` en wordt door `koffer_digitaal.py` ingelezen. Dat bestand is de enige plek waar de kaartvolgorde en de defecte pinnen vastliggen; `digital.py` uit de testmap leest hetzelfde bestand, zodat de klemnummers in de app en in de losse test altijd gelijk zijn. Komt er een kaart bij of wordt er een vervangen, dan is dat bestand het enige dat aangepast hoeft te worden.
+
+> **Let op:** de volgorde onder `kaarten` bepaalt de nummering. Wissel die niet om zonder de koffer opnieuw te labelen, want dan verschuiven alle klemnummers.
+
+## De aansturing
+
+De aansturing zit in `koffer_digitaal.py`. De kaarten zitten op CE0, dezelfde bus als de knoppen- en lampenprint, maar op hardware-adres `001` en hoger; adres `000` wordt nooit aangeraakt. Net als `koffer_io.py` wordt de RESET-lijn alleen hoog gezet en niet gepulst, omdat die lijn gedeeld is.
+
+Een latch van 1 geeft 48 V op de klem. Dat is aan de gebouwde kaarten gemeten; de uitgangstrap is dus niet inverterend. Bij het starten van de simulatie gaat de latch eerst op uit en pas daarna de richting op uitgang, zodat er geen uitgang kort aanslaat.
+
+Er wordt alleen geschreven als er iets verandert, en bij het stoppen van de simulatie, het afsluiten van de app en het uitschakelen van de koffer gaan alle uitgangen uit.
+
+Antwoordt een kaart niet, dan meldt de app dat en blijven de klemmen van die kaart dood; de overige kaarten werken gewoon door. Draait de app zonder `spidev`, dan wordt een mockversie geladen en is de koppeling op een laptop te testen zonder hardware.
 
 # De meetpunten U1 tot en met U8
 

@@ -37,6 +37,8 @@ from gpio_manager import GPIOManager, ON_RPI, GPIO
 from koffer_io import (KofferIO, SPI_AANWEZIG, is_knop, is_lamp, is_spanning,
                        kanaal_index, normaliseer_kanaal)
 from koffer_dac import KofferDAC
+from koffer_digitaal import (KOFFER_UITGANGEN, KofferDigitaal, is_uitgang,
+                             kanaal_omschrijving, uitgang_index)
 
 #  GPIO CONFIGURATIE DIALOOG
 # ═══════════════════════════════════════════════
@@ -93,7 +95,9 @@ class GPIOConfigDialog(QDialog):
             ("✓  SPI actief" if SPI_AANWEZIG
              else "⚠  Mockkoffer actief (geen hardware)")
             + chr(10)
-            + "S1..S8 zijn de knoppen, Q1..Q8 de lampen, U1..U8 de spanningsklemmen."
+            + "S1..S8 knoppen, Q1..Q8 lampen, "
+            + f"D1..D{len(KOFFER_UITGANGEN)} de 48V-uitgangen, "
+            + "U1..U8 de spanningsklemmen."
             + chr(10)
             + "Een meetpunt meet op het eerste aansluitpunt van het component; "
               "dat punt staat in de tekening met een stip aangegeven."
@@ -171,7 +175,7 @@ class GPIOConfigDialog(QDialog):
         if comp.type in GPIO_IN_TYPES:
             return KOFFER_KNOPPEN + KOFFER_SPANNINGEN
         if comp.type in GPIO_OUT_TYPES:
-            return KOFFER_LAMPEN + KOFFER_SPANNINGEN
+            return KOFFER_LAMPEN + KOFFER_UITGANGEN + KOFFER_SPANNINGEN
         return list(KOFFER_SPANNINGEN)
 
     @staticmethod
@@ -194,6 +198,8 @@ class GPIOConfigDialog(QDialog):
             soort = "Meetpunt"
         elif is_knop(kanaal):
             soort = "Knop"
+        elif is_uitgang(kanaal):
+            soort = "48V-uitgang"
         else:
             soort = "Lamp"
         self.table.item(row, 2).setText(soort)
@@ -415,6 +421,7 @@ class CircuitCanvas(QWidget):
         self.gpio_mgr = GPIOManager() if gpio else None
         self.koffer = KofferIO() if gpio else None
         self.dac = KofferDAC() if gpio else None
+        self.digitaal = KofferDigitaal() if gpio else None
         self._gpio_timer = QTimer(self)
         self._gpio_timer.setInterval(50)
         self._gpio_timer.timeout.connect(self._gpio_poll)
@@ -446,9 +453,12 @@ class CircuitCanvas(QWidget):
                       + (", ".join(gekoppeld) if gekoppeld else "NIETS"))
             if self.dac and any(is_spanning(c.kanaal) for c in self.components):
                 self.dac.init()
+            if self.digitaal and any(is_uitgang(c.kanaal) for c in self.components):
+                self.digitaal.init()
             if self.gpio_mgr:
                 self.gpio_mgr.configure_pins(self.components)
-            if self.koffer or self.gpio_mgr or (self.dac and self.dac.actief):
+            if (self.koffer or self.gpio_mgr or (self.dac and self.dac.actief)
+                    or (self.digitaal and self.digitaal.actief)):
                 self._gpio_timer.start()
         else:
             self._gpio_timer.stop()
@@ -457,6 +467,8 @@ class CircuitCanvas(QWidget):
                     self.koffer.cleanup()
                 if self.dac and self.dac.actief:
                     self.dac.cleanup()
+                if self.digitaal and self.digitaal.actief:
+                    self.digitaal.cleanup()
                 if self.gpio_mgr:
                     self.gpio_mgr.cleanup()
         self.wire_start = None
@@ -509,6 +521,15 @@ class CircuitCanvas(QWidget):
                     if k >= 0:
                         standen[k] = active.get(i, False)
             self.koffer.schrijf_lampen(standen)
+
+        if self.digitaal and self.digitaal.actief:
+            standen = {}
+            for i, comp in enumerate(self.components):
+                if is_uitgang(comp.kanaal):
+                    k = uitgang_index(comp.kanaal)
+                    if k >= 0:
+                        standen[k] = active.get(i, False)
+            self.digitaal.schrijf(standen)
 
         if self.dac and self.dac.actief:
             self.dac.schrijf(self._meetspanningen())
@@ -1437,10 +1458,12 @@ class GPIOMonitorPanel(QWidget):
     Onderste rij  : op MockGPIO: toggle-knoppen voor INPUT-pins (test)
     """
 
-    def __init__(self, koffer, on_mock_toggle, dac=None, parent=None):
+    def __init__(self, koffer, on_mock_toggle, dac=None, digitaal=None,
+                 parent=None):
         super().__init__(parent)
         self.koffer         = koffer
         self.dac            = dac
+        self.digitaal       = digitaal
         self.on_mock_toggle = on_mock_toggle   # callback(pin)
         self._components: List[Component] = []
         self._kaartjes: Dict[str, dict]   = {}  # pin → {frame, lbl_state, lbl_comp}
@@ -1521,6 +1544,8 @@ class GPIOMonitorPanel(QWidget):
             dir_kleur, soort = C_SKY, "meetpunt"
         elif is_knop(kanaal):
             dir_kleur, soort = C_GREEN, "knop"
+        elif is_uitgang(kanaal):
+            dir_kleur, soort = C_YELLOW, "48V"
         else:
             dir_kleur, soort = C_PEACH, "lamp"
         lbl_comp = QLabel(f"{comp.label}  [{soort}]")
@@ -1564,7 +1589,7 @@ class GPIOMonitorPanel(QWidget):
 
         if not geconfigureerd:
             lbl = QLabel("Geen kanalen gekoppeld  ·  "
-                         "Klik ⚙ GPIO om S1..S8, Q1..Q8 en U1..U8 te koppelen")
+                         "Klik ⚙ GPIO om S/Q/D/U-kanalen te koppelen")
             lbl.setStyleSheet(
                 f"color:{C_MUTED}; font-family:'Courier New'; font-size:10px;")
             self._kaart_layout.insertWidget(0, lbl)
@@ -1581,8 +1606,10 @@ class GPIOMonitorPanel(QWidget):
         n_knop = sum(1 for _, c in geconfigureerd if is_knop(c.kanaal))
         n_lamp = sum(1 for _, c in geconfigureerd if is_lamp(c.kanaal))
         n_meet = sum(1 for _, c in geconfigureerd if is_spanning(c.kanaal))
+        n_uit = sum(1 for _, c in geconfigureerd if is_uitgang(c.kanaal))
         self.lbl_sum.setText(
-            f"{n_knop} knoppen  |  {n_lamp} lampen  |  {n_meet} meetpunten")
+            f"{n_knop} knoppen  |  {n_lamp} lampen  |  "
+            f"{n_uit} 48V-uitgangen  |  {n_meet} meetpunten")
 
     def update_states(self, components: List[Component]):
         """Ververs de kaartjes op basis van de actuele stand van de koffer."""
@@ -1592,6 +1619,8 @@ class GPIOMonitorPanel(QWidget):
         knoppen = self.koffer.lees_knoppen()
         lampen = self.koffer.lamp_standen()
         spanningen = self.dac.standen() if self.dac and self.dac.actief else {}
+        uitgangen = (self.digitaal.standen()
+                     if self.digitaal and self.digitaal.actief else {})
 
         for comp in components:
             kaartje = self._kaartjes.get(comp.kanaal)
@@ -1606,6 +1635,10 @@ class GPIOMonitorPanel(QWidget):
                 aan = volt > 0.05
                 kleur = C_SKY if aan else C_RED
                 kaartje["lbl_state"].setText(f"{volt:.1f}V")
+            elif is_uitgang(comp.kanaal):
+                aan = uitgangen.get(uitgang_index(comp.kanaal), False)
+                kleur = C_YELLOW if aan else C_RED
+                kaartje["lbl_state"].setText("48V" if aan else "0V")
             else:
                 aan = (knoppen.get(i, False) if is_knop(comp.kanaal)
                        else lampen.get(i, False))
@@ -1880,6 +1913,7 @@ class MainWindow(QMainWindow):
             koffer          = self.canvas.koffer,
             on_mock_toggle  = self._mock_toggle,
             dac             = self.canvas.dac,
+            digitaal        = self.canvas.digitaal,
         )
         self.gpio_monitor.setVisible(False)
         rl.addWidget(self.gpio_monitor)
@@ -2434,6 +2468,8 @@ class MainWindow(QMainWindow):
             self.canvas.koffer.cleanup()
         if self.canvas.dac and self.canvas.dac.actief:
             self.canvas.dac.cleanup()
+        if self.canvas.digitaal and self.canvas.digitaal.actief:
+            self.canvas.digitaal.cleanup()
         if self.canvas.gpio_mgr:
             self.canvas.gpio_mgr.cleanup()
 
@@ -2467,6 +2503,8 @@ class MainWindow(QMainWindow):
             self.canvas.koffer.cleanup()
         if self.canvas.dac and self.canvas.dac.actief:
             self.canvas.dac.cleanup()
+        if self.canvas.digitaal and self.canvas.digitaal.actief:
+            self.canvas.digitaal.cleanup()
         if self.canvas.gpio_mgr:
             self.canvas.gpio_mgr.cleanup()
         self.canvas._gpio_timer.stop()

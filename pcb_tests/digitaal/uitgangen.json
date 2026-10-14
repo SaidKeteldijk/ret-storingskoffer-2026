@@ -1,0 +1,5 @@
+{
+  "kaarten": ["001", "010", "011", "100", "101"],
+  "defect_alle_kaarten": [6, 7, 12, 13, 14],
+  "defect_per_kaart": {}
+}
