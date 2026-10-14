@@ -35,29 +35,12 @@
       "storing": ""
     },
     {
-      "type": "relaiswisselcontact",
-      "col": 19,
-      "row": 11,
-      "label": "735K2",
-      "rotation": 90,
-      "contact_start": 7,
-      "manual_contact_start": false,
-      "gpio_pin": -1,
-      "gpio_dir": "IN",
-      "defect": false,
-      "manual_label": true,
-      "kanaal": "",
-      "spanning_aan": 24.0,
-      "spanning_storing": 12.0,
-      "storing": ""
-    },
-    {
       "type": "relaisspoel",
       "col": 12,
       "row": 22,
       "label": "735K2",
       "rotation": 90,
-      "contact_start": 10,
+      "contact_start": 7,
       "manual_contact_start": false,
       "gpio_pin": -1,
       "gpio_dir": "IN",
@@ -97,6 +80,414 @@
       "gpio_dir": "IN",
       "defect": false,
       "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "spdt",
+      "col": 19,
+      "row": 11,
+      "label": "790F2.6",
+      "rotation": 90,
+      "contact_start": 9,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 26,
+      "row": 8,
+      "label": "735K4",
+      "rotation": 90,
+      "contact_start": 12,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "spdt",
+      "col": 26,
+      "row": 13,
+      "label": "731K9",
+      "rotation": 90,
+      "contact_start": 15,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "spdt",
+      "col": 26,
+      "row": 18,
+      "label": "648K2",
+      "rotation": 90,
+      "contact_start": 18,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaisspoel",
+      "col": 33,
+      "row": 23,
+      "label": "735K5",
+      "rotation": 90,
+      "contact_start": 21,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaisspoel",
+      "col": 26,
+      "row": 23,
+      "label": "735K4",
+      "rotation": 90,
+      "contact_start": 23,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "spdt",
+      "col": 33,
+      "row": 15,
+      "label": "641K9",
+      "rotation": 90,
+      "contact_start": 25,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "gnd",
+      "col": 26,
+      "row": 26,
+      "label": "GND2",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "gnd",
+      "col": 33,
+      "row": 26,
+      "label": "GND3",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "spdt",
+      "col": 39,
+      "row": 8,
+      "label": "734K3",
+      "rotation": 90,
+      "contact_start": 28,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 39,
+      "row": 18,
+      "label": "735K6",
+      "rotation": 90,
+      "contact_start": 31,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "schakelaar",
+      "col": 44,
+      "row": 12,
+      "label": "km-beveiliging",
+      "rotation": 90,
+      "contact_start": 34,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaisspoel",
+      "col": 39,
+      "row": 23,
+      "label": "735K6",
+      "rotation": 90,
+      "contact_start": 36,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "spdt",
+      "col": 39,
+      "row": 13,
+      "label": "731K9",
+      "rotation": 90,
+      "contact_start": 38,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "gnd",
+      "col": 39,
+      "row": 26,
+      "label": "GND4",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "spdt",
+      "col": 54,
+      "row": 8,
+      "label": "641K9",
+      "rotation": 90,
+      "contact_start": 41,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "spdt",
+      "col": 49,
+      "row": 17,
+      "label": "735K5",
+      "rotation": 90,
+      "contact_start": 44,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaisspoel",
+      "col": 50,
+      "row": 23,
+      "label": "735K8",
+      "rotation": 90,
+      "contact_start": 47,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "gnd",
+      "col": 50,
+      "row": 26,
+      "label": "GND5",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "voeding",
+      "col": 5,
+      "row": 5,
+      "label": "+V2",
+      "rotation": 90,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "voeding",
+      "col": 5,
+      "row": 4,
+      "label": "+V3",
+      "rotation": 90,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "voeding",
+      "col": 5,
+      "row": 3,
+      "label": "+V4",
+      "rotation": 90,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 33,
+      "row": 8,
+      "label": "641K7",
+      "rotation": 90,
+      "contact_start": 49,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 48,
+      "row": 8,
+      "label": "641K7",
+      "rotation": 90,
+      "contact_start": 52,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
@@ -153,21 +544,279 @@
       "r2": 23
     },
     {
-      "c1": 5,
+      "c1": 25,
+      "r1": 12,
+      "c2": 25,
+      "r2": 11
+    },
+    {
+      "c1": 25,
+      "r1": 11,
+      "c2": 26,
+      "r2": 11
+    },
+    {
+      "c1": 26,
+      "r1": 11,
+      "c2": 26,
+      "r2": 9
+    },
+    {
+      "c1": 25,
+      "r1": 17,
+      "c2": 25,
+      "r2": 16
+    },
+    {
+      "c1": 25,
+      "r1": 16,
+      "c2": 26,
+      "r2": 16
+    },
+    {
+      "c1": 26,
+      "r1": 16,
+      "c2": 26,
+      "r2": 14
+    },
+    {
+      "c1": 26,
+      "r1": 19,
+      "c2": 26,
+      "r2": 22
+    },
+    {
+      "c1": 33,
+      "r1": 22,
+      "c2": 33,
+      "r2": 16
+    },
+    {
+      "c1": 26,
+      "r1": 20,
+      "c2": 33,
+      "r2": 20
+    },
+    {
+      "c1": 33,
+      "r1": 24,
+      "c2": 33,
+      "r2": 26
+    },
+    {
+      "c1": 26,
+      "r1": 26,
+      "c2": 26,
+      "r2": 24
+    },
+    {
+      "c1": 32,
+      "r1": 14,
+      "c2": 32,
+      "r2": 12
+    },
+    {
+      "c1": 32,
+      "r1": 12,
+      "c2": 33,
+      "r2": 12
+    },
+    {
+      "c1": 33,
+      "r1": 9,
+      "c2": 33,
+      "r2": 12
+    },
+    {
+      "c1": 39,
+      "r1": 16,
+      "c2": 40,
+      "r2": 16
+    },
+    {
+      "c1": 40,
+      "r1": 16,
+      "c2": 40,
+      "r2": 17
+    },
+    {
+      "c1": 39,
+      "r1": 14,
+      "c2": 39,
+      "r2": 16
+    },
+    {
+      "c1": 38,
+      "r1": 12,
+      "c2": 38,
+      "r2": 11
+    },
+    {
+      "c1": 38,
+      "r1": 11,
+      "c2": 39,
+      "r2": 11
+    },
+    {
+      "c1": 39,
+      "r1": 9,
+      "c2": 39,
+      "r2": 11
+    },
+    {
+      "c1": 39,
+      "r1": 19,
+      "c2": 39,
+      "r2": 22
+    },
+    {
+      "c1": 44,
+      "r1": 13,
+      "c2": 44,
+      "r2": 20
+    },
+    {
+      "c1": 39,
+      "r1": 20,
+      "c2": 44,
+      "r2": 20
+    },
+    {
+      "c1": 50,
+      "r1": 26,
+      "c2": 50,
+      "r2": 24
+    },
+    {
+      "c1": 50,
+      "r1": 22,
+      "c2": 50,
+      "r2": 20
+    },
+    {
+      "c1": 49,
+      "r1": 18,
+      "c2": 49,
+      "r2": 20
+    },
+    {
+      "c1": 50,
+      "r1": 20,
+      "c2": 49,
+      "r2": 20
+    },
+    {
+      "c1": 48,
+      "r1": 16,
+      "c2": 48,
+      "r2": 9
+    },
+    {
+      "c1": 54,
+      "r1": 9,
+      "c2": 54,
+      "r2": 13
+    },
+    {
+      "c1": 54,
+      "r1": 13,
+      "c2": 48,
+      "r2": 13
+    },
+    {
+      "c1": 10,
       "r1": 6,
-      "c2": 20,
+      "c2": 58,
       "r2": 6
     },
     {
-      "c1": 20,
-      "r1": 10,
-      "c2": 20,
-      "r2": 6
+      "c1": 10,
+      "r1": 5,
+      "c2": 58,
+      "r2": 5
+    },
+    {
+      "c1": 10,
+      "r1": 4,
+      "c2": 58,
+      "r2": 4
+    },
+    {
+      "c1": 10,
+      "r1": 3,
+      "c2": 58,
+      "r2": 3
     },
     {
       "c1": 13,
       "r1": 10,
       "c2": 13,
+      "r2": 3
+    },
+    {
+      "c1": 20,
+      "r1": 10,
+      "c2": 20,
+      "r2": 5
+    },
+    {
+      "c1": 27,
+      "r1": 7,
+      "c2": 27,
+      "r2": 3
+    },
+    {
+      "c1": 32,
+      "r1": 7,
+      "c2": 32,
+      "r2": 3
+    },
+    {
+      "c1": 38,
+      "r1": 7,
+      "c2": 38,
+      "r2": 3
+    },
+    {
+      "c1": 47,
+      "r1": 7,
+      "c2": 47,
+      "r2": 3
+    },
+    {
+      "c1": 53,
+      "r1": 7,
+      "c2": 53,
+      "r2": 3
+    },
+    {
+      "c1": 44,
+      "r1": 11,
+      "c2": 44,
+      "r2": 5
+    },
+    {
+      "c1": 5,
+      "r1": 3,
+      "c2": 10,
+      "r2": 3
+    },
+    {
+      "c1": 5,
+      "r1": 4,
+      "c2": 10,
+      "r2": 4
+    },
+    {
+      "c1": 5,
+      "r1": 5,
+      "c2": 10,
+      "r2": 5
+    },
+    {
+      "c1": 5,
+      "r1": 6,
+      "c2": 10,
       "r2": 6
     }
   ],
