@@ -158,7 +158,7 @@ Het instructeursscherm heeft drie modi die linksboven omgeschakeld kunnen worden
 
 Onderaan de zijbalk staan twee knoppen voor het beheer van de koffer.
 
-**Software bijwerken** haalt met `git pull` de nieuwste versie van de software op en ververst daarna met `apt-get update` de pakketlijsten. Tijdens het uitvoeren blijft het venster reageren, en achteraf verschijnt een overzicht van wat er gebeurd is. Is er werkelijk nieuwe software opgehaald, dan meldt de app dat je de koffer opnieuw moet opstarten om die te gebruiken.
+**Software bijwerken** haalt met `git pull` de nieuwste versie van de software op en ververst daarna met `apt-get update` de pakketlijsten. Tijdens het uitvoeren blijft het venster reageren, en achteraf verschijnt een overzicht van wat er gebeurd is. Is er werkelijk nieuwe software opgehaald, dan start de app na het overzicht vanzelf opnieuw op met de nieuwe versie. Eerst gaan alle lampen en uitgangen uit en wordt de SPI-bus netjes gesloten; daarna vervangt het Python-proces zichzelf. Onder de systemd-service houdt het daarbij hetzelfde proces-ID, dus de service blijft gewoon draaien. Loopt er op dat moment een examen, dan wordt er niet herstart: de app onthoudt het en herstart pas bij de volgende keer bijwerken na het examen.
 
 Voor het verversen van de pakketlijsten is root nodig. De app gebruikt daarom `sudo -n`, zodat er nooit op een wachtwoordprompt gewacht wordt. Mag de gebruiker dat niet, dan meldt de app dat; je lost het op met een regel in `/etc/sudoers.d/storingskoffer`, aan te maken met `sudo visudo -f /etc/sudoers.d/storingskoffer`:
 

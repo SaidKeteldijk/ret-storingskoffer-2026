@@ -6,6 +6,7 @@ RET N.V. | Said Keteldijk (1045604)
 
 import json
 import math
+import os
 import re
 import subprocess
 import sys
@@ -2832,14 +2833,61 @@ class MainWindow(QMainWindow):
             verslag.append("")
             verslag.append("Pakketlijsten verversen werkt alleen op de koffer.")
 
-        if nieuwe_versie:
+        # Is er eerder nieuwe code opgehaald die nog niet geladen is, omdat er
+        # toen een examen liep, dan telt dat ook als reden om te herstarten.
+        nog_te_laden = nieuwe_versie or getattr(self, "_herstart_nodig", False)
+        herstarten = nog_te_laden and not self.canvas.exam_active
+        self._herstart_nodig = nog_te_laden and not herstarten
+        if herstarten:
             verslag.append("")
-            verslag.append("Er is nieuwe software opgehaald. Start de koffer opnieuw "
-                           "op om die te gebruiken.")
+            verslag.append("Er is nieuwe software opgehaald. De app start na OK "
+                           "opnieuw op met de nieuwe versie.")
+        elif nog_te_laden:
+            verslag.append("")
+            verslag.append("Er is nieuwe software opgehaald, maar er loopt een "
+                           "examen. Rond het examen af en druk daarna nog een keer "
+                           "op Software bijwerken, of start de koffer opnieuw op.")
 
         self.status.setText("Bijwerken afgerond"
                             + (chr(10) + "nieuwe versie opgehaald" if nieuwe_versie else ""))
         QMessageBox.information(self, "Software bijwerken", chr(10).join(verslag))
+        if herstarten:
+            self._herstart_app()
+
+    def _herstart_app(self):
+        """
+        Start de app opnieuw op zodat nieuwe code geladen wordt.
+
+        Eerst gaat de hardware veilig uit, want os.execv vervangt het proces
+        zonder dat closeEvent loopt. Het proces houdt daarbij hetzelfde PID,
+        dus onder de systemd-service blijft de app gewoon draaien.
+        """
+        self.status.setText("Opnieuw opstarten...")
+        QApplication.processEvents()
+        self._exam_timer.stop()
+        self.canvas._gpio_timer.stop()
+        for driver in (self.canvas.koffer, self.canvas.dac, self.canvas.digitaal):
+            if driver and getattr(driver, "actief", False):
+                try:
+                    driver.cleanup()
+                except Exception as e:
+                    print(f"[HERSTART] opruimen mislukt: {e}")
+        if self.canvas.gpio_mgr:
+            self.canvas.gpio_mgr.cleanup()
+
+        main_py = str(Path(__file__).resolve().parent / "main.py")
+        argumenten = [sys.executable, main_py] + sys.argv[1:]
+        print("[HERSTART] nieuwe versie wordt geladen", flush=True)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        if sys.platform.startswith("win"):
+            # Op Windows vervangt execv het proces niet echt; start een
+            # nieuw proces en sluit dit af.
+            subprocess.Popen(argumenten, cwd=str(Path(main_py).parent))
+            QApplication.quit()
+            return
+        os.chdir(str(Path(main_py).parent))
+        os.execv(sys.executable, argumenten)
 
     def _afsluiten(self):
         """Vraag of de koffer uit moet of opnieuw opgestart."""
