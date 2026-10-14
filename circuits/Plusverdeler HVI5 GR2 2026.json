@@ -1,0 +1,176 @@
+{
+  "components": [
+    {
+      "type": "relaiswisselcontact",
+      "col": 12,
+      "row": 11,
+      "label": "735K2",
+      "rotation": 90,
+      "contact_start": 1,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 12,
+      "row": 17,
+      "label": "734K3",
+      "rotation": 90,
+      "contact_start": 4,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 19,
+      "row": 11,
+      "label": "735K2",
+      "rotation": 90,
+      "contact_start": 7,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaisspoel",
+      "col": 12,
+      "row": 22,
+      "label": "735K2",
+      "rotation": 90,
+      "contact_start": 10,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "gnd",
+      "col": 12,
+      "row": 26,
+      "label": "GND1",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "voeding",
+      "col": 5,
+      "row": 6,
+      "label": "+V1",
+      "rotation": 90,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    }
+  ],
+  "wires": [
+    {
+      "c1": 12,
+      "r1": 21,
+      "c2": 12,
+      "r2": 20
+    },
+    {
+      "c1": 12,
+      "r1": 20,
+      "c2": 19,
+      "r2": 20
+    },
+    {
+      "c1": 19,
+      "r1": 12,
+      "c2": 19,
+      "r2": 20
+    },
+    {
+      "c1": 12,
+      "r1": 18,
+      "c2": 12,
+      "r2": 20
+    },
+    {
+      "c1": 11,
+      "r1": 16,
+      "c2": 11,
+      "r2": 14
+    },
+    {
+      "c1": 11,
+      "r1": 14,
+      "c2": 12,
+      "r2": 14
+    },
+    {
+      "c1": 12,
+      "r1": 12,
+      "c2": 12,
+      "r2": 14
+    },
+    {
+      "c1": 12,
+      "r1": 26,
+      "c2": 12,
+      "r2": 23
+    },
+    {
+      "c1": 5,
+      "r1": 6,
+      "c2": 20,
+      "r2": 6
+    },
+    {
+      "c1": 20,
+      "r1": 10,
+      "c2": 20,
+      "r2": 6
+    },
+    {
+      "c1": 13,
+      "r1": 10,
+      "c2": 13,
+      "r2": 6
+    }
+  ],
+  "exam_time_minutes": 10,
+  "naam": "Plusverdeler HVI5 GR2"
+}
