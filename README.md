@@ -241,6 +241,14 @@ Op het moment dat de instructeur op "Start Examen" drukt, wordt een kopie van de
 
 De simulator werkt met een vereenvoudigd aan/uit-model. Vanuit elk voedingscomponent (+V) en elk GND-component wordt met een breadth-first search bepaald welke knooppunten onder spanning staan en welke aan GND liggen. Een component is actief wanneer de ene aansluiting onder spanning staat en de andere aan GND ligt.
 
+Schakelende contacten (schakelaars, wisselschakelaars, relaiscontacten en 2-weg relaiscontacten) geleiden alleen in de **leesrichting van de tekening**: van boven naar beneden, en bij een liggend contact van links naar rechts. Draden, net labels, lampen, motoren en spoelen geleiden in beide richtingen.
+
+Zonder die regel kan spanning via een andere tak van onderaf een keten in lopen. Twee takken die onderin op hetzelfde knooppunt samenkomen, voeden elkaar dan terug, en een draad tussen twee contacten blijft onder spanning terwijl het contact erboven openstaat of klappert. In een echte kast is dat zo (terugvoeding), maar in een tekening die van boven naar beneden gelezen wordt, is het verwarrend en verbergt het storingen.
+
+> **Let op:** teken de voeding daarom altijd boven en de last onder. Een contact waar de spanning van onderen binnenkomt, geleidt niet. Een wisselcontact mag in beide richtingen gebruikt worden: de voeding op COM en kiezen tussen twee lasten, of twee voedingen op A en B en COM naar de last, zolang de voeding maar boven zit.
+
+De regel staat in `constants.py` als `RICHTING_CONTACTEN`. Op `False` geleiden contacten weer in beide richtingen, zoals een echte installatie.
+
 Omdat een relaisspoel een relaiscontact kan bekrachtigen dat op zijn beurt weer een andere spoel voedt, wordt deze berekening herhaald tot de toestand stabiel is, met een maximum van twintig stappen.
 
 ## De beschikbare storingen

@@ -79,6 +79,12 @@ STORING_LABELS = {
     STORING_AFWIJKEND: "Afwijkende spanning",
 }
 
+# Schakelende contacten geleiden alleen in de leesrichting van de tekening:
+# van boven naar beneden, en bij een liggend contact van links naar rechts.
+# Zo kan spanning niet via een andere tak van onderaf een keten in lopen
+# (terugvoeding). Op False geleiden contacten weer in beide richtingen.
+RICHTING_CONTACTEN = True
+
 # Halve periode van een klapperstoring: 400 ms aan, 400 ms uit.
 KLAPPER_MS = 400
 

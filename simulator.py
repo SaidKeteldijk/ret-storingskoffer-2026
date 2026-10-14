@@ -6,7 +6,7 @@ RET N.V. | Said Keteldijk (1045604)
 from typing import List, Dict, Set, Tuple
 from constants import (
     TOOL_SWITCH, TOOL_SW2P_NO, TOOL_SW2P_NC, TOOL_SPDT,
-    STORING_AFWIJKEND, STORING_GEEN, STORING_KLAPPER,
+    RICHTING_CONTACTEN, STORING_AFWIJKEND, STORING_GEEN, STORING_KLAPPER,
     TOOL_RCOIL, TOOL_RCONT, TOOL_RSPDT, TOOL_MOTOR, TOOL_LAMP, TOOL_POWER, TOOL_GND,
     TOOL_NETLABEL,
     FOUR_TERMINAL, THREE_TERMINAL,
@@ -125,12 +125,37 @@ class CircuitSimulator:
             return False
         return self.relay_states.get(self.components[idx].label, False)
 
-    def _build_adj(self) -> Dict:
-        adj: Dict[Tuple, Set] = {}
+    def _build_adj(self) -> Tuple[Dict, Dict]:
+        """
+        Twee verbindingsgrafen: 'vooruit' voor het zoeken vanaf de voeding en
+        'terug' voor het zoeken vanaf GND.
+
+        Draden, net labels en belastingen geleiden in beide richtingen. Een
+        schakelend contact geleidt alleen in de leesrichting van de tekening,
+        van boven naar beneden (zie RICHTING_CONTACTEN), zodat spanning niet
+        via een andere tak van onderaf een keten in kan lopen.
+        """
+        vooruit: Dict[Tuple, Set] = {}
+        terug: Dict[Tuple, Set] = {}
 
         def add(p1, p2):
-            adj.setdefault(p1, set()).add(p2)
-            adj.setdefault(p2, set()).add(p1)
+            for g in (vooruit, terug):
+                g.setdefault(p1, set()).add(p2)
+                g.setdefault(p2, set()).add(p1)
+
+        def richting(p1, p2):
+            if not RICHTING_CONTACTEN:
+                add(p1, p2)
+                return
+            # Leesrichting van de tekening: van boven naar beneden, en bij een
+            # liggend contact van links naar rechts. Dat werkt ongeacht hoe het
+            # contact gedraaid is, en ook voor een wisselcontact met de voeding
+            # op COM.
+            van, naar = sorted((p1, p2), key=lambda p: (p[1], p[0]))
+            vooruit.setdefault(van, set()).add(naar)
+            vooruit.setdefault(naar, set())
+            terug.setdefault(naar, set()).add(van)
+            terug.setdefault(van, set())
 
         # ── Draden: voeg een knooppunt toe voor elk rasterpunt op de draad.
         # Dit zorgt dat T-verbindingen correct werken: een draad van A naar B
@@ -158,7 +183,7 @@ class CircuitSimulator:
             if c.type == TOOL_SWITCH:
                 # 1-polig NO: sluit als gesloten. Defect → altijd open.
                 if not defect and self.sw_states.get(i, False):
-                    add(pts[0], pts[1])
+                    richting(pts[0], pts[1])
 
             elif c.type in (TOOL_SW2P_NO, TOOL_SW2P_NC):
                 # 2-polig: pts = [p1L, p1R, p2L, p2R]. Defect → altijd open.
@@ -168,8 +193,8 @@ class CircuitSimulator:
                     nc = (c.type == TOOL_SW2P_NC)
                     actief = gesloten if not nc else not gesloten
                     if actief:
-                        add(p1L, p1R)
-                        add(p2L, p2R)
+                        richting(p1L, p1R)
+                        richting(p2L, p2R)
 
             elif c.type == TOOL_SPDT:
                 # SPDT: pts = [A (common), B, C]. Defect → vast op B (open).
@@ -178,13 +203,13 @@ class CircuitSimulator:
                     if self.klappert_los(c):
                         pass        # contact laat los: geen van beide standen
                     elif defect:
-                        add(a, b)   # vast in standaardpositie B
+                        richting(b, a)   # vast in standaardpositie B
                     else:
                         positie_c = self.sw_states.get(i, False)
                         if positie_c:
-                            add(a, cv)
+                            richting(cv, a)
                         else:
-                            add(a, b)
+                            richting(b, a)
 
             elif c.type == TOOL_RSPDT:
                 # Relaiswisselcontact. Defect → koppeling verbroken, vast op B.
@@ -193,12 +218,12 @@ class CircuitSimulator:
                     if self.klappert_los(c):
                         pass        # contact laat los: geen van beide standen
                     elif defect:
-                        add(a, b)   # koppeling spoel↔contact verbroken
+                        richting(b, a)   # koppeling spoel↔contact verbroken
                     else:
                         if self.contact_stand(i):
-                            add(a, cv)
+                            richting(cv, a)
                         else:
-                            add(a, b)
+                            richting(b, a)
 
             elif c.type == TOOL_RCOIL:
                 # Spoel geleidt stroom ongeacht defect, maar koppeling wordt
@@ -208,7 +233,7 @@ class CircuitSimulator:
             elif c.type == TOOL_RCONT:
                 # Defect → contact sluit nooit (koppeling verbroken).
                 if not defect and self.contact_stand(i):
-                    add(pts[0], pts[1])
+                    richting(pts[0], pts[1])
 
             elif c.type in (TOOL_MOTOR, TOOL_LAMP):
                 # Defect = onderbroken, zoals een doorgebrande lamp of wikkeling.
@@ -230,7 +255,7 @@ class CircuitSimulator:
             for node in nodes[1:]:
                 add(basis, node)
 
-        return adj
+        return vooruit, terug
 
     @staticmethod
     def _bfs(adj: Dict, starts: Set) -> Set:
@@ -245,7 +270,7 @@ class CircuitSimulator:
         return visited
 
     def _step(self):
-        adj = self._build_adj()
+        vooruit, terug = self._build_adj()
 
         power_nodes: Set = set()
         gnd_nodes:   Set = set()
@@ -258,8 +283,8 @@ class CircuitSimulator:
             elif c.type == TOOL_GND:
                 gnd_nodes.add(pts[0])
 
-        self.live_nodes = self._bfs(adj, power_nodes)
-        self.gnd_nodes  = self._bfs(adj, gnd_nodes)
+        self.live_nodes = self._bfs(vooruit, power_nodes)
+        self.gnd_nodes  = self._bfs(terug, gnd_nodes)
 
         for c in self.components:
             if c.type != TOOL_RCOIL:
