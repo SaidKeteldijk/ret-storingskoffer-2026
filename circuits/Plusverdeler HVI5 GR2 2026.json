@@ -370,7 +370,7 @@
       "manual_contact_start": false,
       "gpio_pin": -1,
       "gpio_dir": "OUT",
-      "defect": true,
+      "defect": false,
       "manual_label": true,
       "kanaal": "D1",
       "spanning_aan": 24.0,
@@ -379,30 +379,12 @@
       "storing_los": false
     },
     {
-      "type": "spdt",
-      "col": 49,
-      "row": 17,
-      "label": "735K5",
-      "rotation": 90,
-      "contact_start": 44,
-      "manual_contact_start": false,
-      "gpio_pin": -1,
-      "gpio_dir": "OUT",
-      "defect": false,
-      "manual_label": true,
-      "kanaal": "U5",
-      "spanning_aan": 48.0,
-      "spanning_storing": 12.0,
-      "storing": "afwijkend",
-      "storing_los": false
-    },
-    {
       "type": "relaisspoel",
       "col": 50,
       "row": 23,
       "label": "735K8",
       "rotation": 90,
-      "contact_start": 47,
+      "contact_start": 44,
       "manual_contact_start": false,
       "gpio_pin": -1,
       "gpio_dir": "OUT",
@@ -481,7 +463,7 @@
       "defect": false,
       "manual_label": false,
       "kanaal": "U4",
-      "spanning_aan": 48.0,
+      "spanning_aan": 24.0,
       "spanning_storing": 12.0,
       "storing": "afwijkend",
       "storing_los": false
@@ -492,7 +474,7 @@
       "row": 8,
       "label": "641K7",
       "rotation": 90,
-      "contact_start": 49,
+      "contact_start": 46,
       "manual_contact_start": false,
       "gpio_pin": -1,
       "gpio_dir": "OUT",
@@ -510,7 +492,7 @@
       "row": 8,
       "label": "641K7",
       "rotation": 90,
-      "contact_start": 52,
+      "contact_start": 49,
       "manual_contact_start": false,
       "gpio_pin": -1,
       "gpio_dir": "OUT",
@@ -520,6 +502,24 @@
       "spanning_aan": 48.0,
       "spanning_storing": 12.0,
       "storing": "klapper",
+      "storing_los": false
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 49,
+      "row": 17,
+      "label": "735K5",
+      "rotation": 90,
+      "contact_start": 52,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "OUT",
+      "defect": false,
+      "manual_label": true,
+      "kanaal": "U5",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": "",
       "storing_los": false
     }
   ],
@@ -717,30 +717,6 @@
       "r2": 24
     },
     {
-      "c1": 50,
-      "r1": 22,
-      "c2": 50,
-      "r2": 20
-    },
-    {
-      "c1": 49,
-      "r1": 18,
-      "c2": 49,
-      "r2": 20
-    },
-    {
-      "c1": 50,
-      "r1": 20,
-      "c2": 49,
-      "r2": 20
-    },
-    {
-      "c1": 48,
-      "r1": 16,
-      "c2": 48,
-      "r2": 9
-    },
-    {
       "c1": 54,
       "r1": 9,
       "c2": 54,
@@ -853,6 +829,36 @@
       "r1": 24,
       "c2": 39,
       "r2": 26
+    },
+    {
+      "c1": 48,
+      "r1": 16,
+      "c2": 48,
+      "r2": 13
+    },
+    {
+      "c1": 48,
+      "r1": 9,
+      "c2": 48,
+      "r2": 13
+    },
+    {
+      "c1": 50,
+      "r1": 22,
+      "c2": 50,
+      "r2": 20
+    },
+    {
+      "c1": 49,
+      "r1": 18,
+      "c2": 49,
+      "r2": 20
+    },
+    {
+      "c1": 50,
+      "r1": 20,
+      "c2": 49,
+      "r2": 20
     }
   ],
   "exam_time_minutes": 10,
