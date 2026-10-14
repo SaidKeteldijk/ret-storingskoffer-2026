@@ -43,7 +43,7 @@ TOOL_RSPDT = "relaiswisselcontact"
 TOOL_MOTOR = "motor"
 TOOL_LAMP = "lamp"
 TOOL_POWER = "voeding"
-TOOL_GND = "massa"
+TOOL_GND = "gnd"
 TOOL_DELETE = "verwijder"
 
 SINGLE_TERMINAL = {TOOL_POWER, TOOL_GND, TOOL_NETLABEL}
@@ -62,12 +62,16 @@ KOFFER_LAMPEN     = [f"Q{i + 1}" for i in range(8)]
 KOFFER_SPANNINGEN = [f"U{i + 1}" for i in range(8)]
 
 # Elk component met minstens een aansluitpunt kan als meetpunt dienen.
+# GND valt er bewust buiten: een meetpunt op GND leest altijd 0 V.
 GPIO_MEET_TYPES = (GPIO_IN_TYPES | GPIO_OUT_TYPES |
-                   {TOOL_RSPDT, TOOL_NETLABEL, TOOL_POWER, TOOL_GND})
+                   {TOOL_RSPDT, TOOL_NETLABEL, TOOL_POWER})
 
 SPANNING_MAX               = 48.0
 SPANNING_AAN_STANDAARD     = 24.0
 SPANNING_STORING_STANDAARD = 12.0
+
+# Typenamen uit oudere schakelingbestanden.
+TYPE_OUD = {"massa": TOOL_GND}
 
 CONTACTS_PER_TYPE = {
     TOOL_SWITCH: 2,
@@ -116,7 +120,7 @@ TOOL_LABELS = {
     TOOL_MOTOR: "Motor",
     TOOL_LAMP: "Lamp",
     TOOL_POWER: "Voeding (+V)",
-    TOOL_GND: "Massa (GND)",
+    TOOL_GND: "GND",
     TOOL_DELETE: "Verwijder",
 }
 

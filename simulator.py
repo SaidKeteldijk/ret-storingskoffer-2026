@@ -18,7 +18,7 @@ from models import Component, Wire, comp_connections
 class CircuitSimulator:
     """
     Vereenvoudigd aan/uit-simulatiemodel.
-    Stroomvoering: BFS vanuit Voeding(+V) en Massa(GND) componenten.
+    Stroomvoering: BFS vanuit Voeding(+V) en GND componenten.
     Schakelaar: user-gestuurd (klik om te sluiten/openen).
     Relaiscontact: volgt automatisch de relaisspoel met hetzelfde label.
     """

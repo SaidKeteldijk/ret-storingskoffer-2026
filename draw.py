@@ -321,7 +321,7 @@ def _ec_voeding(p, label, cs):
     _tekst(p, 0, -26 * labelschaal(), label if label else "+24VDC")
 
 
-def _ec_massa(p, label, cs):
+def _ec_gnd(p, label, cs):
     kleur = "#a6adc8"
     p.setPen(QPen(QColor(kleur), 2))
     p.setBrush(QBrush(QColor(kleur)))
@@ -366,6 +366,6 @@ EC_DRAW_BASE = {
     TOOL_MOTOR: lambda p, l, c: _ec_motor(p, l, c),
     TOOL_LAMP: lambda p, l, c: _ec_lamp(p, l, c),
     TOOL_POWER: lambda p, l, c: _ec_voeding(p, l, c),
-    TOOL_GND: lambda p, l, c: _ec_massa(p, l, c),
+    TOOL_GND: lambda p, l, c: _ec_gnd(p, l, c),
     TOOL_NETLABEL: lambda p, l, c: _ec_netlabel(p, l, c),
 }

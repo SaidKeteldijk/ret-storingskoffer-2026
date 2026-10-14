@@ -71,7 +71,7 @@
       "gpio_dir": "IN"
     },
     {
-      "type": "massa",
+      "type": "gnd",
       "col": 5,
       "row": 21,
       "label": "GND1",

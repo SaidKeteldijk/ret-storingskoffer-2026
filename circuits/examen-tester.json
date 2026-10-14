@@ -61,7 +61,7 @@
       "defect": false
     },
     {
-      "type": "massa",
+      "type": "gnd",
       "col": 11,
       "row": 19,
       "label": "GND1",
@@ -73,7 +73,7 @@
       "defect": false
     },
     {
-      "type": "massa",
+      "type": "gnd",
       "col": 6,
       "row": 19,
       "label": "GND2",
@@ -157,7 +157,7 @@
       "defect": false
     },
     {
-      "type": "massa",
+      "type": "gnd",
       "col": 17,
       "row": 16,
       "label": "GND3",
@@ -169,7 +169,7 @@
       "defect": false
     },
     {
-      "type": "massa",
+      "type": "gnd",
       "col": 22,
       "row": 16,
       "label": "GND4",

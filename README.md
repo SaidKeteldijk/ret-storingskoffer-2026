@@ -176,7 +176,7 @@ In de Bewerken-modus zijn de volgende componenten beschikbaar:
 | Motor | M | 2 |
 | Lamp | H | 2 |
 | Voeding (+V) | +V | 0 |
-| Massa (GND) | GND | 0 |
+| GND | GND | 0 |
 
 Componenten met hetzelfde label worden automatisch aan elkaar gekoppeld. Een relaiscontact met label `K1` volgt dus de relaisspoel met label `K1`. De automatische nummering loopt per labelgroep door: alle soorten schakelaars tellen samen op als `S1`, `S2`, `S3`, ongeacht of het een eenpolige, tweepolige of wisselschakelaar is. Relaisspoelen en relaiscontacten houden juist een eigen telling, zodat spoel `K1` en contact `K1` standaard bij elkaar horen. Een label dat je zelf instelt wordt niet meer hernummerd en houdt zijn nummer bezet. Net Labels met dezelfde naam worden in de simulatie als één knooppunt behandeld, zodat een schakeling over meerdere bladen verdeeld kan worden zonder dat er een draad tussen getekend hoeft te worden.
 
@@ -194,7 +194,7 @@ Op het moment dat de instructeur op "Start Examen" drukt, wordt een kopie van de
 
 # De simulatie
 
-De simulator werkt met een vereenvoudigd aan/uit-model. Vanuit elk voedingscomponent (+V) en elk massacomponent (GND) wordt met een breadth-first search bepaald welke knooppunten onder spanning staan en welke aan massa liggen. Een component is actief wanneer de ene aansluiting onder spanning staat en de andere aan massa ligt.
+De simulator werkt met een vereenvoudigd aan/uit-model. Vanuit elk voedingscomponent (+V) en elk GND-component wordt met een breadth-first search bepaald welke knooppunten onder spanning staan en welke aan GND liggen. Een component is actief wanneer de ene aansluiting onder spanning staat en de andere aan GND ligt.
 
 Omdat een relaisspoel een relaiscontact kan bekrachtigen dat op zijn beurt weer een andere spoel voedt, wordt deze berekening herhaald tot de toestand stabiel is, met een maximum van twintig stappen.
 
@@ -276,11 +276,11 @@ Antwoordt een kaart niet, dan meldt de app dat en blijven de klemmen van die kaa
 
 Een meetpunt is een plek in de tekening waarvan de spanning op een klem van de koffer komt te staan. De monteur meet daar met een multimeter, net als aan een echte installatie. De acht klemmen worden gevoed door de spannings-DAC's van de twee DAC-printen: U1 tot en met U4 door print 1 en U5 tot en met U8 door print 2.
 
-Elk component kan een meetpunt zijn, ook een net label, een voeding of een massa. Gemeten wordt er altijd op het **eerste aansluitpunt** van het component. In de tekening staat dat punt met een blauwe stip aangegeven, met het klemnummer ernaast, zodat er geen twijfel over kan bestaan waar de meting vandaan komt.
+Bijna elk component kan een meetpunt zijn, ook een net label of een voeding. GND valt er buiten, want daar staat altijd 0 V. Gemeten wordt er altijd op het **eerste aansluitpunt** van het component. In de tekening staat dat punt met een blauwe stip aangegeven, met het klemnummer ernaast, zodat er geen twijfel over kan bestaan waar de meting vandaan komt.
 
 ## Hoe de spanning bepaald wordt
 
-De simulatie rekent geen spanningen uit. Ze houdt bij welke punten met de voeding verbonden zijn en welke met massa, meer niet. De waarde die op de klem komt te staan wordt daarom per meetpunt ingesteld; de simulatie kiest alleen welke van die waarden het wordt:
+De simulatie rekent geen spanningen uit. Ze houdt bij welke punten met de voeding verbonden zijn en welke met GND, meer niet. De waarde die op de klem komt te staan wordt daarom per meetpunt ingesteld; de simulatie kiest alleen welke van die waarden het wordt:
 
 | Toestand van het meetpunt | Spanning op de klem |
 |------------------------------------------|---------------------------|

@@ -21,7 +21,7 @@
       "gpio_dir": "IN"
     },
     {
-      "type": "massa",
+      "type": "gnd",
       "col": 15,
       "row": 14,
       "label": "GND1",
@@ -31,7 +31,7 @@
       "gpio_dir": "IN"
     },
     {
-      "type": "massa",
+      "type": "gnd",
       "col": 23,
       "row": 14,
       "label": "GND2",

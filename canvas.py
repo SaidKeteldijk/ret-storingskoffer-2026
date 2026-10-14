@@ -30,7 +30,7 @@ from models    import (
 )
 from draw      import (EC_DRAW_BASE, _ec_schakelaar, _ec_schakelaar2p, _ec_spdt, _ec_rspdt, _ec_netlabel,
                        _ec_relaisspoel, _ec_relaiscontact, _ec_motor, _ec_lamp,
-                       _ec_voeding, _ec_massa, labelfont, labelschaal,
+                       _ec_voeding, _ec_gnd, labelfont, labelschaal,
                        stel_labelschaal)
 from simulator import CircuitSimulator
 from gpio_manager import GPIOManager, ON_RPI, GPIO
@@ -604,7 +604,10 @@ class CircuitCanvas(QWidget):
         comps = []
         for c in data.get("components", []):
             merged = {**comp_defaults, **c}
+            merged["type"] = TYPE_OUD.get(merged.get("type"), merged.get("type"))
             merged["kanaal"] = normaliseer_kanaal(merged.get("kanaal", ""))
+            if merged["type"] not in GPIO_MEET_TYPES:
+                merged["kanaal"] = ""
             comps.append(Component(**merged))
         self.components = comps
         self.wires           = [Wire(**w) for w in data.get("wires", [])]
@@ -1199,7 +1202,7 @@ class CircuitCanvas(QWidget):
             elif comp.type == TOOL_POWER:
                 _ec_voeding(p, l, cs)
             elif comp.type == TOOL_GND:
-                _ec_massa(p, l, cs)
+                _ec_gnd(p, l, cs)
             elif comp.type == TOOL_NETLABEL:
                 _ec_netlabel(p, l, cs)
         else:
@@ -1754,7 +1757,7 @@ class MainWindow(QMainWindow):
                      "  klik A zelf → ontkoppel\n"
                      "  schakelaar→schakelaar\n"
                      "  schakelaar→relaisspoel\n\n"
-                     "⊕ Voeding + ⏚ Massa\nnodig voor simulatie")
+                     "⊕ Voeding + ⏚ GND\nnodig voor simulatie")
         tip.setStyleSheet(f"color:{C_MUTED}; font-size:10px; font-family:'Courier New';")
         p1l.addWidget(tip)
         self.zij_stack.addWidget(p1)
