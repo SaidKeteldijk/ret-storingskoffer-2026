@@ -116,6 +116,26 @@ class CircuitSimulator:
                 and getattr(comp, 'storing', '') == STORING_KLAPPER
                 and not self.klapper_aan)
 
+    def stand_c(self, idx: int) -> bool:
+        """
+        De werkelijke stand van een wisselcontact: True = op het tweede
+        contact, False = in de ruststand op het eerste contact (in de
+        tekening de letter A).
+
+        Een vaste storing laat het contact in de ruststand hangen, wat de
+        knop of de spoel ook doet. Dezelfde stand wordt gebruikt voor de
+        verbindingen, voor 'actief' en voor de tekening, zodat die drie
+        nooit uit elkaar lopen.
+        """
+        if idx >= len(self.components):
+            return False
+        c = self.components[idx]
+        if self.defect_nu(c) and not self.klappert_los(c):
+            return False
+        if c.type == TOOL_RSPDT:
+            return self.contact_stand(idx)
+        return self.sw_states.get(idx, False)
+
     def contact_stand(self, idx: int) -> bool:
         """Stand van een relaiscontact: van de spoel, of van de knop op de
         koffer zodra het contact daaraan gekoppeld is."""
@@ -196,34 +216,17 @@ class CircuitSimulator:
                         richting(p1L, p1R)
                         richting(p2L, p2R)
 
-            elif c.type == TOOL_SPDT:
-                # SPDT: pts = [A (common), B, C]. Defect → vast op B (open).
+            elif c.type in (TOOL_SPDT, TOOL_RSPDT):
+                # Wisselcontact: pts = [COM, ruststand (A), tweede stand (B)].
+                # Vaste storing: blijft in de ruststand hangen (zie stand_c).
                 if len(pts) >= 3:
                     a, b, cv = pts[0], pts[1], pts[2]
                     if self.klappert_los(c):
                         pass        # contact laat los: geen van beide standen
-                    elif defect:
-                        richting(b, a)   # vast in standaardpositie B
+                    elif self.stand_c(i):
+                        richting(cv, a)
                     else:
-                        positie_c = self.sw_states.get(i, False)
-                        if positie_c:
-                            richting(cv, a)
-                        else:
-                            richting(b, a)
-
-            elif c.type == TOOL_RSPDT:
-                # Relaiswisselcontact. Defect → koppeling verbroken, vast op B.
-                if len(pts) >= 3:
-                    a, b, cv = pts[0], pts[1], pts[2]
-                    if self.klappert_los(c):
-                        pass        # contact laat los: geen van beide standen
-                    elif defect:
-                        richting(b, a)   # koppeling spoel↔contact verbroken
-                    else:
-                        if self.contact_stand(i):
-                            richting(cv, a)
-                        else:
-                            richting(b, a)
+                        richting(b, a)
 
             elif c.type == TOOL_RCOIL:
                 # Spoel geleidt stroom ongeacht defect, maar koppeling wordt
@@ -349,11 +352,9 @@ class CircuitSimulator:
             # SPDT/relaiswisselcontact: actief als het actieve pad stroomvoert
             if len(pts) >= 3:
                 a, b, cv = pts[0], pts[1], pts[2]
-                if c.type == TOOL_RSPDT:
-                    positie_c = self.contact_stand(idx)
-                else:
-                    positie_c = self.sw_states.get(idx, False)
-                actief_pt = cv if positie_c else b
+                if self.klappert_los(c):
+                    return False
+                actief_pt = cv if self.stand_c(idx) else b
                 return (
                     (a in self.live_nodes and actief_pt in self.gnd_nodes) or
                     (actief_pt in self.live_nodes and a in self.gnd_nodes)

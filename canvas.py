@@ -448,10 +448,10 @@ class FaultConfigDialog(QDialog):
 
     Defectgedrag per type:
       Schakelaar / 2P-schakelaar : altijd open (nooit sluit)
-      SPDT-schakelaar            : vast in standaardpositie B
+      SPDT-schakelaar            : blijft hangen in de ruststand (A)
       Relaisspoel                : koppeling spoel→contact verbroken
       Relaiscontact              : contact sluit nooit
-      Relaiswisselcontact        : koppeling verbroken, vast op B
+      Relaiswisselcontact        : volgt de spoel niet, blijft hangen op A
       Motor / Lamp               : visueel gemarkeerd als defect
     """
 
@@ -459,10 +459,10 @@ class FaultConfigDialog(QDialog):
         TOOL_SWITCH:    "Altijd open (nooit sluit)",
         TOOL_SW2P_NO:   "Altijd open (nooit sluit)",
         TOOL_SW2P_NC:   "Altijd open (nooit sluit)",
-        TOOL_SPDT:      "Vast op positie B",
+        TOOL_SPDT:      "Blijft hangen op A",
         TOOL_RCOIL:     "Koppeling spoel↔contact verbroken",
         TOOL_RCONT:     "Contact sluit nooit",
-        TOOL_RSPDT:     "Koppeling verbroken, vast op B",
+        TOOL_RSPDT:     "Volgt de spoel niet, blijft hangen op A",
         TOOL_MOTOR:     "Visueel defect (gemarkeerd)",
         TOOL_LAMP:      "Visueel defect (gemarkeerd)",
     }
@@ -623,6 +623,11 @@ class FaultConfigDialog(QDialog):
         elif soort == STORING_AFWIJKEND:
             volt = getattr(comp, "spanning_storing", SPANNING_STORING_STANDAARD)
             tekst = f"Klem {comp.kanaal} geeft {volt:.1f} V"
+        elif comp.type == TOOL_SPDT:
+            tekst = f"Blijft hangen op A (contact {comp.contact_start + 1})"
+        elif comp.type == TOOL_RSPDT:
+            tekst = (f"Volgt de spoel niet, blijft hangen op A "
+                     f"(contact {comp.contact_start + 1})")
         else:
             tekst = self._FAULT_TYPES.get(comp.type, "—")
         self.table.item(row, 3).setText(tekst)
@@ -1535,13 +1540,13 @@ class CircuitCanvas(QWidget):
             elif comp.type == TOOL_SW2P_NC:
                 _ec_schakelaar2p(p, l, cs, gesloten=closed, nc=True)
             elif comp.type == TOOL_SPDT:
-                _ec_spdt(p, l, cs, positie_c=closed, flipped=True, los=los)
+                _ec_spdt(p, l, cs, positie_c=self.sim.stand_c(idx), flipped=True, los=los)
             elif comp.type == TOOL_RCOIL:
                 _ec_relaisspoel(p, l, cs, actief=energized)
             elif comp.type == TOOL_RCONT:
                 _ec_relaiscontact(p, l, cs, gesloten=rc_closed and not los)
             elif comp.type == TOOL_RSPDT:
-                _ec_rspdt(p, l, cs, positie_c=rc_closed, flipped=True, los=los)
+                _ec_rspdt(p, l, cs, positie_c=self.sim.stand_c(idx), flipped=True, los=los)
             elif comp.type == TOOL_MOTOR:
                 _ec_motor(p, l, cs, actief=active)
             elif comp.type == TOOL_LAMP:

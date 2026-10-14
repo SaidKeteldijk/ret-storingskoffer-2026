@@ -260,14 +260,14 @@ Per component kan de instructeur een storing instellen, en per component is er e
 | Component | Gedrag bij een vaste storing |
 |--------------------------|-----------------------------------------------|
 | Schakelaar (1P en 2P) | Sluit nooit, blijft altijd open |
-| 2-weg wisselschakelaar | Blijft vast staan op positie B |
+| 2-weg wisselschakelaar | Blijft hangen in de ruststand, de stand met de letter A, wat je ook met de knop doet |
 | Relaisspoel | De koppeling tussen spoel en contact is verbroken |
 | Relaiscontact | Het contact sluit nooit |
-| 2-weg relaiscontact | De koppeling is verbroken, blijft vast op B |
+| 2-weg relaiscontact | Volgt de spoel niet meer en blijft hangen op A |
 | Motor | Draait niet, ook al staat er spanning op |
 | Lamp | Gaat niet branden, ook al staat er spanning op |
 
-**Klappert.** Het component wisselt elke 400 ms tussen werkend en defect. Een relaisspoel die klappert laat zijn contacten steeds los, zoals een relais met een te lage spoelspanning of een vervuild contact. Dat werkt door in de hele schakeling: alles achter die contacten gaat mee knipperen, inclusief een uitgang die eraan gekoppeld is. Een klapperende spoel K1 laat dus klem D1 knipperen zonder dat er iets met D1 zelf aan de hand is, en dat is precies het soort storing waarvan de oorzaak niet staat waar het verschijnsel zichtbaar is. Bij een wisselschakelaar of een 2-weg relaiscontact laat het contact in de losse fase helemaal los en verbindt het geen van beide standen. Dat is bewust anders dan de vaste storing, die het contact op B laat staan: in rust staat zo'n contact toch al op B, en dan zou een klapper onzichtbaar zijn. In de tekening is dat te zien: de tong van het wisselcontact staat in de losse fase recht tussen A en B in, en een gewone schakelaar of een relaiscontact staat dan open.
+**Klappert.** Het component wisselt elke 400 ms tussen werkend en defect. Een relaisspoel die klappert laat zijn contacten steeds los, zoals een relais met een te lage spoelspanning of een vervuild contact. Dat werkt door in de hele schakeling: alles achter die contacten gaat mee knipperen, inclusief een uitgang die eraan gekoppeld is. Een klapperende spoel K1 laat dus klem D1 knipperen zonder dat er iets met D1 zelf aan de hand is, en dat is precies het soort storing waarvan de oorzaak niet staat waar het verschijnsel zichtbaar is. Bij een wisselschakelaar of een 2-weg relaiscontact laat het contact in de losse fase helemaal los en verbindt het geen van beide standen. Dat is bewust anders dan de vaste storing, die het contact in de ruststand op A laat hangen: in rust staat zo'n contact toch al op A, en dan zou een klapper onzichtbaar zijn. In de tekening is dat te zien: de tong van het wisselcontact staat in de losse fase recht tussen A en B in, en een gewone schakelaar of een relaiscontact staat dan open.
 
 De halve periode staat in `constants.py` als `KLAPPER_MS`. Zolang er een klapperstoring actief is, blijft de simulatie elke 50 ms doorrekenen, ook als er verder niets verandert.
 
