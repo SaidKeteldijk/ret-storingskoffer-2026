@@ -129,7 +129,7 @@ pip install -r requirements.txt
 Het instructeursscherm heeft drie modi die linksboven omgeschakeld kunnen worden:
 
 - **Bekijken** – hier kiest de instructeur een opgeslagen deelschakeling uit de lijst. De schakeling wordt weergegeven zonder dat er iets gewijzigd kan worden. Zodra er een schakeling gekozen is verschijnen de knoppen **Simuleren** en **Verwijderen**. Verwijderen wist het bestand van de schijf, na een bevestiging waarin de naam en het volledige pad staan. Tijdens een lopend examen wordt verwijderen geweigerd. Verwijder je de schakeling die op dat moment in beeld staat, dan blijft de tekening gewoon staan maar is er geen bestand meer om naar op te slaan; de statusbalk zegt dat je dan "Opslaan als" moet gebruiken.
-- **Bewerken** – hier tekent de instructeur een nieuwe deelschakeling of past hij een bestaande aan. In deze modus kunnen ook de storingen en de GPIO-koppelingen ingesteld worden.
+- **Bewerken** – hier tekent de instructeur een nieuwe deelschakeling of past hij een bestaande aan. In deze modus kunnen ook de storingen en de koppeling met de hardware ingesteld worden.
 - **Examen** – hier stelt de instructeur de examentijd in en start hij het examen.
 
 Onderaan de zijbalk staan twee knoppen voor het beheer van de koffer.
@@ -228,7 +228,7 @@ Een storing in de meting of in de uitgang raakt de schakeling zelf niet. Het com
 
 # De koppeling met de koffer
 
-Elk component kan aan een kanaal van de knoppen- en lampenprint gekoppeld worden. Dit gebeurt in de Bewerken-modus via de knop "GPIO". Het componenttype bepaalt zelf om wat voor kanaal het gaat:
+Een component kan aan een kanaal van de koffer gekoppeld worden. Dat gebeurt met de knop "Hardware koppeling" in de titelbalk, die zowel in de Bewerken-modus als tijdens de simulatie beschikbaar is. Het componenttype bepaalt welke kanalen er aangeboden worden:
 
 | Component | Kanaal | Werking |
 |------------------------------------------|----------|-----------------------------------------|

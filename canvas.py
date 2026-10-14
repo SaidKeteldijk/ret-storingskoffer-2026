@@ -1670,7 +1670,7 @@ class GPIOMonitorPanel(QWidget):
 
         if not geconfigureerd:
             lbl = QLabel("Geen kanalen gekoppeld  ·  "
-                         "Klik ⚙ GPIO om S/Q/D/U-kanalen te koppelen")
+                         "Klik ⚙ Hardware koppeling om een kanaal te kiezen")
             lbl.setStyleSheet(
                 f"color:{C_MUTED}; font-family:'Courier New'; font-size:10px;")
             self._kaart_layout.insertWidget(0, lbl)
@@ -1896,7 +1896,7 @@ class MainWindow(QMainWindow):
         tip2 = QLabel(
             "Werkwijze:\n"
             "1. Bouw circuit (Bewerken)\n"
-            "2. Koppel GPIO-pinnen\n"
+            "2. Koppel de hardware\n"
             "3. Stel storingen in\n"
             "4. Kies tijdslimiet\n"
             "5. Klik Start Examen\n\n"
@@ -1964,7 +1964,7 @@ class MainWindow(QMainWindow):
         self.storing_knop.clicked.connect(self._storing_config)
         tf_l.addWidget(self.storing_knop)
 
-        self.gpio_knop = QPushButton("⚙  GPIO")
+        self.gpio_knop = QPushButton("⚙  Hardware koppeling")
         self.gpio_knop.setVisible(False)
         self.gpio_knop.setStyleSheet(
             f"background:{C_PEACH}; color:{C_SIDE}; font-weight:bold; "
@@ -2060,7 +2060,7 @@ class MainWindow(QMainWindow):
             self.canvas.set_mode("edit")
             self.stop_sim_knop.setVisible(False)
             self.storing_knop.setVisible(True)
-            self.gpio_knop.setVisible(False)
+            self.gpio_knop.setVisible(True)
             self.canvas.setFocus()
         elif examen:
             # Schakel naar view-modus zodat de instructeur niets per ongeluk wijzigt
@@ -2137,7 +2137,7 @@ class MainWindow(QMainWindow):
         if koffer and koffer.actief:
             bron = "koffer verbonden" if SPI_AANWEZIG else "mockkoffer"
             tekst = f"Simulatie actief  [{bron}]"
-            tekst += chr(10) + "GPIO-knop = kanalen Q1..Q8 en S1..S8 koppelen"
+            tekst += chr(10) + "Hardware koppeling = een kanaal aan een component hangen"
         else:
             reden = koffer.fout if koffer and koffer.fout else "onbekende oorzaak"
             tekst = "Simulatie actief, maar de koffer reageert niet:"
