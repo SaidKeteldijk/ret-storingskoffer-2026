@@ -499,7 +499,7 @@
       "defect": true,
       "manual_label": true,
       "kanaal": "U7",
-      "spanning_aan": 48.0,
+      "spanning_aan": 24.0,
       "spanning_storing": 12.0,
       "storing": "klapper",
       "storing_los": false
