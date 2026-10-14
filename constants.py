@@ -66,6 +66,22 @@ KOFFER_SPANNINGEN = [f"U{i + 1}" for i in range(8)]
 GPIO_MEET_TYPES = (GPIO_IN_TYPES | GPIO_OUT_TYPES |
                    {TOOL_RSPDT, TOOL_NETLABEL, TOOL_POWER})
 
+# Soorten storing. 'vast' is het oude gedrag en blijft de standaard.
+STORING_VAST      = "vast"
+STORING_KLAPPER   = "klapper"
+STORING_GEEN      = "geen"
+STORING_AFWIJKEND = "afwijkend"
+
+STORING_LABELS = {
+    STORING_VAST:      "Vast",
+    STORING_KLAPPER:   "Klappert",
+    STORING_GEEN:      "Geen spanning",
+    STORING_AFWIJKEND: "Afwijkende spanning",
+}
+
+# Halve periode van een klapperstoring: 400 ms aan, 400 ms uit.
+KLAPPER_MS = 400
+
 SPANNING_MAX               = 48.0
 SPANNING_AAN_STANDAARD     = 24.0
 SPANNING_STORING_STANDAARD = 12.0

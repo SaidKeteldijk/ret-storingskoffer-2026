@@ -6,6 +6,7 @@ RET N.V. | Said Keteldijk (1045604)
 from typing import List, Dict, Set, Tuple
 from constants import (
     TOOL_SWITCH, TOOL_SW2P_NO, TOOL_SW2P_NC, TOOL_SPDT,
+    STORING_AFWIJKEND, STORING_GEEN, STORING_KLAPPER,
     TOOL_RCOIL, TOOL_RCONT, TOOL_RSPDT, TOOL_MOTOR, TOOL_LAMP, TOOL_POWER, TOOL_GND,
     TOOL_NETLABEL,
     FOUR_TERMINAL, THREE_TERMINAL,
@@ -35,6 +36,7 @@ class CircuitSimulator:
         self.live_nodes:  Set[Tuple[int, int]]   = set()
         self.gnd_nodes:   Set[Tuple[int, int]]   = set()
         self.hand_bediend: Set[int]              = set()   # stand komt van de koffer
+        self.klapper_aan: bool                   = True    # fase van een klapperstoring
 
     def load(self, components: List[Component], wires: List[Wire]):
         self.components  = components
@@ -82,6 +84,24 @@ class CircuitSimulator:
             if self.relay_states == old:
                 break
 
+    def defect_nu(self, comp) -> bool:
+        """
+        Is dit component op dit moment elektrisch defect?
+
+        Een klapperstoring wisselt mee met de klapperfase, zodat een relais
+        dat klappert zijn contacten steeds los laat. Een storing in de
+        meting of in de uitgang raakt de schakeling niet: daar is het
+        component zelf in orde en klopt alleen wat eruit komt.
+        """
+        if not getattr(comp, 'defect', False):
+            return False
+        soort = getattr(comp, 'storing', '') or ''
+        if soort == STORING_KLAPPER:
+            return not self.klapper_aan
+        if soort in (STORING_GEEN, STORING_AFWIJKEND):
+            return False
+        return True
+
     def contact_stand(self, idx: int) -> bool:
         """Stand van een relaiscontact: van de spoel, of van de knop op de
         koffer zodra het contact daaraan gekoppeld is."""
@@ -119,7 +139,7 @@ class CircuitSimulator:
             if len(pts) < 2:
                 continue
 
-            defect = getattr(c, 'defect', False)
+            defect = self.defect_nu(c)
 
             if c.type == TOOL_SWITCH:
                 # 1-polig NO: sluit als gesloten. Defect → altijd open.
@@ -236,7 +256,7 @@ class CircuitSimulator:
             )
             # Defecte spoel: stroom loopt wel, maar koppeling naar
             # relaiscontacten is verbroken → relay_states blijft False.
-            if getattr(c, 'defect', False):
+            if self.defect_nu(c):
                 self.relay_states[c.label] = False
             else:
                 self.relay_states[c.label] = energized

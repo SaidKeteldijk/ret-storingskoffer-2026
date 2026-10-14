@@ -200,9 +200,11 @@ Omdat een relaisspoel een relaiscontact kan bekrachtigen dat op zijn beurt weer 
 
 ## De beschikbare storingen
 
-Per component kan de instructeur een storing instellen. Het gedrag per componenttype is als volgt:
+Per component kan de instructeur een storing instellen, en per component is er een keuze uit de soorten storing die daarbij passen. Dat gebeurt in de storingendialoog: een vinkje zet de storing aan, de keuzelijst ernaast bepaalt wat er misgaat, en de kolom ernaast beschrijft het gevolg.
 
-| Component | Gedrag bij storing |
+**Vast.** De klassieke storing: het component doet het niet meer. Dit is het gedrag dat er altijd al was en het blijft de standaard.
+
+| Component | Gedrag bij een vaste storing |
 |--------------------------|-----------------------------------------------|
 | Schakelaar (1P en 2P) | Sluit nooit, blijft altijd open |
 | 2-weg wisselschakelaar | Blijft vast staan op positie B |
@@ -211,6 +213,18 @@ Per component kan de instructeur een storing instellen. Het gedrag per component
 | 2-weg relaiscontact | De koppeling is verbroken, blijft vast op B |
 | Motor | Draait niet, ook al staat er spanning op |
 | Lamp | Gaat niet branden, ook al staat er spanning op |
+
+**Klappert.** Het component wisselt elke 400 ms tussen werkend en defect. Een relaisspoel die klappert laat zijn contacten steeds los, zoals een relais met een te lage spoelspanning of een vervuild contact. Dat werkt door in de hele schakeling: alles achter die contacten gaat mee knipperen, inclusief een uitgang die eraan gekoppeld is. Een klapperende spoel K1 laat dus klem D1 knipperen zonder dat er iets met D1 zelf aan de hand is, en dat is precies het soort storing waarvan de oorzaak niet staat waar het verschijnsel zichtbaar is.
+
+De halve periode staat in `constants.py` als `KLAPPER_MS`. Zolang er een klapperstoring actief is, blijft de simulatie elke 50 ms doorrekenen, ook als er verder niets verandert.
+
+**Geen spanning.** Alleen voor een component dat aan een klem gekoppeld is. De schakeling werkt gewoon, maar er komt niets uit de klem: een meetpunt geeft 0 V in plaats van zijn waarde, een 48V-uitgang blijft uit terwijl de simulatie hem aanstuurt. Dit bootst een onderbroken draad tussen de schakeling en de klem na.
+
+**Afwijkende spanning.** Alleen voor een meetpunt. De klem geeft de ingestelde storingswaarde in plaats van de normale waarde. Door die waarde onder of boven de normale te zetten maak je een te lage of een te hoge spanning: 9 V waar 24 V hoort te staan wijst op een overgangsweerstand, 31 V waar 24 V hoort te staan op een verkeerd aangesloten voeding. Die waarde stel je in bij de koppeling, in de kolom "Bij storing".
+
+Welke soorten beschikbaar zijn hangt af van het component. Een schakelaar of relais kan vast of klapperend zijn; een component met een 48V-uitgang kan geen spanning geven of klapperen; een meetpunt kan een afwijkende waarde geven, geen spanning geven of klapperen.
+
+Een storing in de meting of in de uitgang raakt de schakeling zelf niet. Het component werkt elektrisch gewoon door en alleen wat eruit komt klopt niet. Een vaste of klapperende storing werkt wel door in de schakeling, want daar is het component zelf stuk.
 
 # De koppeling met de koffer
 

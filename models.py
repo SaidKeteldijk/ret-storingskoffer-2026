@@ -38,6 +38,7 @@ class Component:
     kanaal:        str = ""
     spanning_aan:     float = SPANNING_AAN_STANDAARD
     spanning_storing: float = SPANNING_STORING_STANDAARD
+    storing:          str = ""
 
 
 @dataclass

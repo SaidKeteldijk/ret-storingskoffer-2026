@@ -239,6 +239,15 @@ class GPIOConfigDialog(QDialog):
 # ═══════════════════════════════════════════════
 #  STORINGEN DIALOOG
 # ═══════════════════════════════════════════════
+def storing_soorten(comp) -> List[str]:
+    """Welke soorten storing bij dit component passen."""
+    if is_spanning(comp.kanaal):
+        return [STORING_AFWIJKEND, STORING_GEEN, STORING_KLAPPER]
+    if is_uitgang(comp.kanaal):
+        return [STORING_GEEN, STORING_KLAPPER]
+    return [STORING_VAST, STORING_KLAPPER]
+
+
 class FaultConfigDialog(QDialog):
     """
     Dialoog voor het instellen van defecte componenten.
@@ -298,22 +307,23 @@ class FaultConfigDialog(QDialog):
         layout.setContentsMargins(16, 16, 16, 12)
 
         info = QLabel(
-            "Vink hieronder componenten aan die tijdens de simulatie defect zijn.\n"
+            "Vink componenten aan die defect zijn en kies wat er misgaat.\n"
             "Defecte componenten worden in de editor en simulatie gemarkeerd met een rood kruis."
         )
         info.setStyleSheet(
             f"color:{C_YELLOW}; font-family:'Courier New'; font-size:10px;")
         layout.addWidget(info)
 
-        self.table = QTableWidget(len(self.comp_indices), 4)
+        self.table = QTableWidget(len(self.comp_indices), 5)
         self.table.setHorizontalHeaderLabels(
-            ["Label", "Type", "Storingsgedrag", "Defect"])
+            ["Label", "Type", "Soort storing", "Gedrag", "Defect"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionMode(QTableWidget.NoSelection)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
 
         self._checkboxes: Dict[int, QCheckBox] = {}
+        self._soorten: Dict[int, QComboBox] = {}
 
         for row, ci in enumerate(self.comp_indices):
             comp = components[ci]
@@ -326,15 +336,22 @@ class FaultConfigDialog(QDialog):
             tp.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(row, 1, tp)
 
-            if is_spanning(comp.kanaal):
-                volt = getattr(comp, "spanning_storing",
-                               SPANNING_STORING_STANDAARD)
-                omschrijving = f"Klem {comp.kanaal} geeft {volt:.1f} V"
-            else:
-                omschrijving = self._FAULT_TYPES.get(comp.type, "—")
-            desc = QTableWidgetItem(omschrijving)
+            soorten = storing_soorten(comp)
+            keuze = QComboBox()
+            keuze.addItems([STORING_LABELS[k] for k in soorten])
+            huidig = getattr(comp, "storing", "") or soorten[0]
+            if huidig in soorten:
+                keuze.setCurrentIndex(soorten.index(huidig))
+            keuze.setProperty("soorten", soorten)
+            self.table.setCellWidget(row, 2, keuze)
+            self._soorten[ci] = keuze
+
+            desc = QTableWidgetItem("")
             desc.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 2, desc)
+            self.table.setItem(row, 3, desc)
+            keuze.currentIndexChanged.connect(
+                lambda _i, r=row, c=ci: self._werk_gedrag_bij(r, c))
+            self._werk_gedrag_bij(row, ci)
 
             cb = QCheckBox()
             cb.setChecked(getattr(comp, 'defect', False))
@@ -344,7 +361,7 @@ class FaultConfigDialog(QDialog):
             cb_layout.addWidget(cb)
             cb_layout.setAlignment(Qt.AlignCenter)
             cb_layout.setContentsMargins(0, 0, 0, 0)
-            self.table.setCellWidget(row, 3, cb_widget)
+            self.table.setCellWidget(row, 4, cb_widget)
             self._checkboxes[ci] = cb
 
         layout.addWidget(self.table)
@@ -369,14 +386,35 @@ class FaultConfigDialog(QDialog):
             f"QPushButton:hover {{ background:{C_BORDER}; }}")
         layout.addWidget(btns)
 
+    def _gekozen(self, ci: int) -> str:
+        keuze = self._soorten[ci]
+        return keuze.property("soorten")[keuze.currentIndex()]
+
+    def _werk_gedrag_bij(self, row: int, ci: int):
+        comp = self.components[ci]
+        soort = self._gekozen(ci)
+        if soort == STORING_KLAPPER:
+            tekst = f"Wisselt elke {KLAPPER_MS} ms aan en uit"
+        elif soort == STORING_GEEN and is_uitgang(comp.kanaal):
+            tekst = f"{comp.kanaal} blijft uit, ook als de schakeling hem aanstuurt"
+        elif soort == STORING_GEEN:
+            tekst = f"Klem {comp.kanaal} geeft 0 V, ook met spanning op het punt"
+        elif soort == STORING_AFWIJKEND:
+            volt = getattr(comp, "spanning_storing", SPANNING_STORING_STANDAARD)
+            tekst = f"Klem {comp.kanaal} geeft {volt:.1f} V"
+        else:
+            tekst = self._FAULT_TYPES.get(comp.type, "—")
+        self.table.item(row, 3).setText(tekst)
+
     def _set_all(self, state: bool):
         for cb in self._checkboxes.values():
             cb.setChecked(state)
 
     def apply(self):
-        """Schrijf de defect-vlaggen terug naar de componentenlijst."""
+        """Schrijf de storingen terug naar de componentenlijst."""
         for ci, cb in self._checkboxes.items():
             self.components[ci].defect = cb.isChecked()
+            self.components[ci].storing = self._gekozen(ci)
 
 
 # ═══════════════════════════════════════════════
@@ -411,6 +449,7 @@ class CircuitCanvas(QWidget):
 
         # Sim state
         self.sim = CircuitSimulator()
+        self._klapper_t0 = time.monotonic()
 
         # Examen
         self.exam_active        = False   # storingen verborgen, timer loopt
@@ -477,6 +516,11 @@ class CircuitCanvas(QWidget):
 
     # ── GPIO polling ─────────────────────────
 
+    def _klapperstoringen(self) -> bool:
+        return any(getattr(c, 'defect', False)
+                   and getattr(c, 'storing', '') == STORING_KLAPPER
+                   for c in self.components)
+
     def _gpio_poll(self):
         """
         Wordt elke 50 ms aangeroepen tijdens simulatie.
@@ -485,6 +529,16 @@ class CircuitCanvas(QWidget):
         3. Schrijf de lampen van de koffer op basis van actieve componenten
         """
         changed = False
+
+        # Een klapperstoring heeft een eigen ritme en moet dus blijven
+        # doorrekenen, ook als er verder niets verandert.
+        if self._klapperstoringen():
+            fase = int((time.monotonic() - self._klapper_t0)
+                       * 1000 / KLAPPER_MS) % 2 == 0
+            if fase != self.sim.klapper_aan:
+                self.sim.klapper_aan = fase
+                self.sim.solve()
+                changed = True
 
         if self.koffer and self.koffer.actief:
             knoppen = self.koffer.lees_knoppen()
@@ -525,10 +579,12 @@ class CircuitCanvas(QWidget):
         if self.digitaal and self.digitaal.actief:
             standen = {}
             for i, comp in enumerate(self.components):
-                if is_uitgang(comp.kanaal):
-                    k = uitgang_index(comp.kanaal)
-                    if k >= 0:
-                        standen[k] = active.get(i, False)
+                if not is_uitgang(comp.kanaal):
+                    continue
+                k = uitgang_index(comp.kanaal)
+                if k < 0:
+                    continue
+                standen[k] = self._uitgang_stand(comp, active.get(i, False))
             self.digitaal.schrijf(standen)
 
         if self.dac and self.dac.actief:
@@ -542,6 +598,21 @@ class CircuitCanvas(QWidget):
 
         if changed:
             self.update()
+
+    def _uitgang_stand(self, comp, aan: bool) -> bool:
+        """
+        De stand van een 48V-uitgang, met de storing erin verwerkt.
+
+        Een klapperende uitgang volgt de klapperfase zolang de schakeling
+        hem aanstuurt; een uitgang zonder spanning blijft uit ook als de
+        schakeling wel werkt.
+        """
+        if not aan or not getattr(comp, 'defect', False):
+            return aan
+        soort = getattr(comp, 'storing', '') or STORING_GEEN
+        if soort == STORING_KLAPPER:
+            return self.sim.klapper_aan
+        return False
 
     def _meetspanningen(self) -> Dict[int, float]:
         """
@@ -562,14 +633,20 @@ class CircuitCanvas(QWidget):
             punten = comp_connections(comp)
             if k < 0 or not punten:
                 continue
+            goed = float(getattr(comp, 'spanning_aan', SPANNING_AAN_STANDAARD))
             if not self.sim.node_is_live(punten[0]):
                 waarden[k] = 0.0
-            elif getattr(comp, 'defect', False):
-                waarden[k] = float(getattr(comp, 'spanning_storing',
-                                           SPANNING_STORING_STANDAARD))
+            elif not getattr(comp, 'defect', False):
+                waarden[k] = goed
             else:
-                waarden[k] = float(getattr(comp, 'spanning_aan',
-                                           SPANNING_AAN_STANDAARD))
+                soort = getattr(comp, 'storing', '') or STORING_AFWIJKEND
+                if soort == STORING_GEEN:
+                    waarden[k] = 0.0
+                elif soort == STORING_KLAPPER:
+                    waarden[k] = goed if self.sim.klapper_aan else 0.0
+                else:
+                    waarden[k] = float(getattr(comp, 'spanning_storing',
+                                               SPANNING_STORING_STANDAARD))
         return waarden
 
     def open_fault_dialog(self):
@@ -600,7 +677,8 @@ class CircuitCanvas(QWidget):
                          "gpio_pin": -1, "gpio_dir": "IN", "kanaal": "",
                          "defect": False, "manual_label": False,
                          "spanning_aan": SPANNING_AAN_STANDAARD,
-                         "spanning_storing": SPANNING_STORING_STANDAARD}
+                         "spanning_storing": SPANNING_STORING_STANDAARD,
+                         "storing": ""}
         comps = []
         for c in data.get("components", []):
             merged = {**comp_defaults, **c}
