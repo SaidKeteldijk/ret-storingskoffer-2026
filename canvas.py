@@ -172,12 +172,15 @@ class GPIOConfigDialog(QDialog):
 
     @staticmethod
     def _opties(comp: Component) -> List[str]:
-        """Elk component mag meetpunt zijn; knop of lamp hangt van het type af."""
+        """
+        Elk component mag een 48V-uitgang of een meetpunt zijn; of er ook een
+        knop of lamp bij hoort, hangt van het type af.
+        """
         if comp.type in GPIO_IN_TYPES:
-            return KOFFER_KNOPPEN + KOFFER_SPANNINGEN
+            return KOFFER_KNOPPEN + KOFFER_UITGANGEN + KOFFER_SPANNINGEN
         if comp.type in GPIO_OUT_TYPES:
             return KOFFER_LAMPEN + KOFFER_UITGANGEN + KOFFER_SPANNINGEN
-        return list(KOFFER_SPANNINGEN)
+        return KOFFER_UITGANGEN + KOFFER_SPANNINGEN
 
     @staticmethod
     def _spin(waarde: float) -> QDoubleSpinBox:
@@ -431,11 +434,17 @@ def deel_storing(components, bron) -> int:
 
 
 def storing_soorten(comp) -> List[str]:
-    """Welke soorten storing bij dit component passen."""
+    """
+    Welke soorten storing bij dit component passen. Hangt het aan een klem,
+    dan komen de klemstoringen erbij, maar een schakelaar of relais houdt
+    ook dan zijn eigen vaste storing.
+    """
+    eigen = ([STORING_VAST] if comp.type in FaultConfigDialog._FAULT_TYPES
+             else [])
     if is_spanning(comp.kanaal):
-        return [STORING_AFWIJKEND, STORING_GEEN, STORING_KLAPPER]
+        return [STORING_AFWIJKEND, STORING_GEEN, STORING_KLAPPER] + eigen
     if is_uitgang(comp.kanaal):
-        return [STORING_GEEN, STORING_KLAPPER]
+        return [STORING_GEEN, STORING_KLAPPER] + eigen
     return [STORING_VAST, STORING_KLAPPER]
 
 
@@ -489,7 +498,8 @@ class FaultConfigDialog(QDialog):
         # de storing een afwijkende spanning op de klem.
         self.comp_indices = sorted(
             (i for i, c in enumerate(components)
-             if c.type in self._FAULT_TYPES or is_spanning(c.kanaal)),
+             if c.type in self._FAULT_TYPES or is_spanning(c.kanaal)
+             or is_uitgang(c.kanaal)),
             key=lambda i: lijst_volgorde(components[i]))
         self.components = components
 
@@ -838,7 +848,14 @@ class CircuitCanvas(QWidget):
                 k = uitgang_index(comp.kanaal)
                 if k < 0:
                     continue
-                standen[k] = self._uitgang_stand(comp, active.get(i, False))
+                punten = comp_connections(comp)
+                if len(punten) == 1:
+                    # Voeding of net label: geen stroom door het component,
+                    # dus de uitgang volgt de spanning op dat punt.
+                    aan = self.sim.node_is_live(punten[0])
+                else:
+                    aan = active.get(i, False)
+                standen[k] = self._uitgang_stand(comp, aan)
             self.digitaal.schrijf(standen)
 
         if self.dac and self.dac.actief:

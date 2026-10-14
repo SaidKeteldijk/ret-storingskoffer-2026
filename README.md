@@ -295,7 +295,7 @@ Een component kan aan een kanaal van de koffer gekoppeld worden. Dat gebeurt met
 |------------------------------------------|----------|-----------------------------------------|
 | Schakelaar, 2-weg wisselschakelaar, relaiscontact, 2-weg relaiscontact | S1 .. S8 | De fysieke knop stuurt de simulatie aan |
 | Lamp, motor, relaisspoel | Q1 .. Q8 | De simulatie stuurt de fysieke lamp aan |
-| Lamp, motor, relaisspoel | D1 .. D55 | De simulatie schakelt 48 V op een klem |
+| Elk component, behalve GND | D1 .. D55 | De simulatie schakelt 48 V op een klem |
 | Elk component, ook een net label | U1 .. U8 | De simulatie zet een spanning op de meetklem |
 
 Elk kanaal hoort bij één component; de dialoog weigert te sluiten zolang twee componenten hetzelfde kanaal delen.
@@ -318,7 +318,7 @@ Tijdens de simulatie worden de knoppen elke 50 ms uitgelezen. Draait de app op e
 
 Een component kan ook aan een digitale 48V-uitgang gekoppeld worden. Die uitgangen zitten op de MCP23S17-kaarten van deelsysteem 6 en schakelen een echte 48 V op een klem van de koffer, zodat de simulatie een contactor, een signaallamp of een andere last in een oefenpaneel kan aansturen.
 
-De koppeling werkt hetzelfde als bij de lampen: zodra het component in de simulatie stroom voert, gaat de uitgang aan. Het verschil is alleen waar het signaal naartoe gaat.
+De koppeling werkt hetzelfde als bij de lampen: zodra het component in de simulatie stroom voert, gaat de uitgang aan. Dat geldt voor elk component: een lamp gaat aan als hij brandt, een schakelaar of relaiscontact als hij dicht is en er stroom doorheen loopt. Een voeding of net label heeft geen stroom door zich heen; daar volgt de uitgang de spanning op dat punt. Het verschil is alleen waar het signaal naartoe gaat.
 
 ## De nummering
 

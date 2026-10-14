@@ -116,6 +116,18 @@ class CircuitSimulator:
                 and getattr(comp, 'storing', '') == STORING_KLAPPER
                 and not self.klapper_aan)
 
+    def contact_dicht(self, idx: int) -> bool:
+        """Is deze schakelaar of dit relaiscontact op dit moment gesloten?"""
+        c = self.components[idx]
+        if self.defect_nu(c):
+            return False
+        if c.type == TOOL_RCONT:
+            return self.contact_stand(idx)
+        gesloten = self.sw_states.get(idx, False)
+        if c.type == TOOL_SW2P_NC:
+            return not gesloten
+        return gesloten
+
     def stand_c(self, idx: int) -> bool:
         """
         De werkelijke stand van een wisselcontact: True = op het tweede
@@ -341,7 +353,10 @@ class CircuitSimulator:
         if len(pts) < 2:
             return False
         if c.type in FOUR_TERMINAL:
-            # 2P: actief als minstens één pool stroomvoerend is
+            # 2P: actief als minstens één pool stroomvoerend is. Een open pool
+            # voert geen stroom, ook al staat de volle spanning erover.
+            if not self.contact_dicht(idx):
+                return False
             p1L, p1R, p2L, p2R = pts[0], pts[1], pts[2], pts[3]
             pole1 = ((p1L in self.live_nodes and p1R in self.gnd_nodes) or
                      (p1R in self.live_nodes and p1L in self.gnd_nodes))
@@ -360,7 +375,11 @@ class CircuitSimulator:
                     (actief_pt in self.live_nodes and a in self.gnd_nodes)
                 )
             return False
-        # Standaard 2-aansluitpunt
+        # Standaard 2-aansluitpunt. Een schakelaar of relaiscontact moet ook
+        # echt dicht zijn: over een open contact staat wel spanning, maar er
+        # loopt geen stroom doorheen.
+        if c.type in (TOOL_SWITCH, TOOL_RCONT) and not self.contact_dicht(idx):
+            return False
         p1, p2 = pts[0], pts[1]
         return (
             (p1 in self.live_nodes and p2 in self.gnd_nodes) or
