@@ -47,20 +47,44 @@ De twee schermen hebben elk een eigen taak:
 | Externe monitor | HDMI0 | Instructeur | Volledig dashboard: ontwerpen, storing, examen |
 | Raspberry Pi Touch 2 | DSI | Monteur | Statische schakeling en examentijd |
 
+## Schematische opzet van de hardware
+
+![Schematische opzet van de hardware](hardware-blokschema.png)
+
+De gestreepte lijn is de koffer zelf. Het informatiescherm van de instructeur staat erbuiten, want dat is een losse monitor die via HDMI wordt aangesloten. Binnen de koffer zit bovenin het scherm van de monteur, de Raspberry Pi Touch Display 2, en daaronder de Single Board Computer, een Raspberry Pi 5, die alles aanstuurt.
+
+De voedingsbeveiliging verdeelt de voeding over de printen eronder. Alle printen hangen aan dezelfde SPI-bus van de Raspberry Pi en hebben elk een eigen hardware-adres:
+
+| Blok in de tekening | Wat het doet | Aansluiting |
+|------------------------|-------------------------------------------------------|----------------------|
+| Output PCB (5×) | 48V-uitgangen naar de klemmen `D1` tot en met `D55` | CE0, adres `001` tot en met `101` |
+| Analoge PCB | Spanningsklemmen `U1` tot en met `U8` en de stroomlussen | CE1 |
+| Input & lampen | Knoppen `S1` tot en met `S8` en lampen `Q1` tot en met `Q8` | CE0, adres `000` |
+
+In de tekening staat de analoge print als één blok; in de koffer zijn het twee DAC-printen, die samen de acht spanningsklemmen leveren.
+
 De printplaten die op de Raspberry Pi worden aangesloten zijn:
 
 - De voedingsbeveiliging (deelsysteem 2), die de 24 VDC van de hoofdvoeding omzet naar een 5 VDC- en een 48 VDC-busrail, en die de kortsluitbeveiliging en de noodstop bevat.
-- De digitale outputmodule (deelsysteem 6), die de digitale signalen van de Raspberry Pi omzet naar schakelspanningen van 48 V. Omdat de nagebootste deelschakelingen tussen de 50 en 100 contacten bevatten en de Raspberry Pi zelf maar 28 bruikbare GPIO-pinnen heeft, wordt gebruikgemaakt van MCP23S17 I/O-expanders op de SPI-bus. Acht expanders leveren samen 128 digitale uitgangen.
+- De digitale outputmodule (deelsysteem 6), die de digitale signalen van de Raspberry Pi omzet naar schakelspanningen van 48 V. Omdat de nagebootste deelschakelingen tussen de 50 en 100 contacten bevatten en de Raspberry Pi zelf maar 28 bruikbare GPIO-pinnen heeft, wordt gebruikgemaakt van MCP23S17 I/O-expanders op de SPI-bus.
 
 Er zijn vijf digitale outputmodules gebouwd, op hardware-adres `001` tot en met `101`. Van de zestien uitgangen per kaart werken er vijf niet: in de telling van de MCP23S17 zijn dat pin 6, 7, 12, 13 en 14, op de printopdruk 7, 8, 13, 14 en 15. Dat is op elke kaart dezelfde set, dus het ligt niet aan een losse print maar aan het ontwerp. Er blijven elf bruikbare uitgangen per kaart over, samen 55 in plaats van 80. Alleen die 55 zijn op de koffer doorverbonden en ze heten `D1` tot en met `D55`; de verdeling staat in `pcb_tests/digitaal/uitgangen.json`.
 
 De volledige onderbouwing van de printplaten, inclusief de schematische tekeningen, de componentkeuzes en de berekeningen, is te vinden in het projectdocument.
 
-> **Let op:** de software in deze repository stuurt op dit moment de GPIO-pinnen van de Raspberry Pi rechtstreeks aan via de bibliotheek `RPi.GPIO`. De aansturing via de MCP23S17 I/O-expanders is nog niet in de software verwerkt. Het aantal beschikbare uitgangen is daarmee voorlopig beperkt tot de 26 pinnen die in `constants.py` onder `VALID_GPIO_PINS` staan.
-
 # De software
 
 De software die op de Raspberry Pi van de storingskoffer draait is als volgt opgebouwd. Voor het besturingssysteem wordt een Linux kernel gebruikt (Raspberry Pi OS). Hierin wordt een virtuele omgeving opgebouwd in Python. In deze virtuele omgeving VENV (Virtual Environment) wordt de Python app opgestart die de grafische interface beheert en de GPIO-pinnen aanstuurt.
+
+## Schematische opzet van de software
+
+![Schematische opzet van de software](software-blokschema.png)
+
+De software volgt dezelfde indeling als de hardware, zodat de twee tekeningen naast elkaar te lezen zijn. Het informatiescherm van de instructeur is `canvas.py`, met daarin de editor, de storingen, het examen en de koppeling met de koffer. Het scherm van de monteur is `monteur.py`, dat alleen de tekening en de examentijd laat zien. `main.py` start de app en zet beide vensters op het juiste scherm.
+
+Daaronder rekent `simulator.py` uit welke punten van de schakeling onder spanning staan en welke componenten werken, met `models.py` voor de gegevens van de componenten en `draw.py` voor de symbolen. De koppeling verdeelt de uitkomst over de kanalen van de koffer: de knoppen `S`, de lampen `Q`, de 48V-uitgangen `D` en de spanningsklemmen `U`.
+
+Onderin staat per print een eigen aansturing, met dezelfde kleur als de print in de hardwaretekening: `koffer_digitaal.py` voor de uitgangskaarten, `koffer_dac.py` voor de analoge print en `koffer_io.py` voor de knoppen- en lampenprint. De schakelingen zelf worden als JSON-bestand opgeslagen in de map `circuits`.
 
 De grafische interface is gebouwd met PyQt5. De schakelingen worden niet als afbeelding ingeladen maar in de app zelf getekend, zodat elke schakeling in de editor aangepast kan worden zonder de broncode te wijzigen.
 

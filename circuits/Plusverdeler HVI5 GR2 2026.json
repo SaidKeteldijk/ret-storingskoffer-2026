@@ -15,7 +15,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "relaiswisselcontact",
@@ -32,7 +33,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "relaisspoel",
@@ -49,7 +51,8 @@
       "kanaal": "Q1",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "gnd",
@@ -66,7 +69,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "",
+      "storing_los": false
     },
     {
       "type": "voeding",
@@ -83,7 +87,8 @@
       "kanaal": "U1",
       "spanning_aan": 48.0,
       "spanning_storing": 0.0,
-      "storing": "afwijkend"
+      "storing": "afwijkend",
+      "storing_los": false
     },
     {
       "type": "spdt",
@@ -100,7 +105,8 @@
       "kanaal": "S1",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "relaiswisselcontact",
@@ -117,7 +123,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "spdt",
@@ -134,7 +141,8 @@
       "kanaal": "S2",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "spdt",
@@ -151,7 +159,8 @@
       "kanaal": "S3",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "relaisspoel",
@@ -168,7 +177,8 @@
       "kanaal": "Q3",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "relaisspoel",
@@ -185,7 +195,8 @@
       "kanaal": "Q2",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "spdt",
@@ -197,12 +208,13 @@
       "manual_contact_start": false,
       "gpio_pin": -1,
       "gpio_dir": "IN",
-      "defect": true,
+      "defect": false,
       "manual_label": true,
       "kanaal": "S4",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "klapper"
+      "storing": "klapper",
+      "storing_los": false
     },
     {
       "type": "gnd",
@@ -219,7 +231,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "",
+      "storing_los": false
     },
     {
       "type": "gnd",
@@ -236,7 +249,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "",
+      "storing_los": false
     },
     {
       "type": "spdt",
@@ -248,12 +262,13 @@
       "manual_contact_start": false,
       "gpio_pin": -1,
       "gpio_dir": "OUT",
-      "defect": false,
+      "defect": true,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "klapper",
+      "storing_los": false
     },
     {
       "type": "relaiswisselcontact",
@@ -270,7 +285,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "schakelaar",
@@ -282,12 +298,13 @@
       "manual_contact_start": false,
       "gpio_pin": -1,
       "gpio_dir": "OUT",
-      "defect": true,
+      "defect": false,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "klapper"
+      "storing": "klapper",
+      "storing_los": false
     },
     {
       "type": "relaisspoel",
@@ -304,7 +321,8 @@
       "kanaal": "Q5",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "spdt",
@@ -321,7 +339,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "gnd",
@@ -338,7 +357,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "",
+      "storing_los": false
     },
     {
       "type": "spdt",
@@ -355,7 +375,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "spdt",
@@ -372,7 +393,8 @@
       "kanaal": "U5",
       "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": "afwijkend"
+      "storing": "afwijkend",
+      "storing_los": false
     },
     {
       "type": "relaisspoel",
@@ -389,7 +411,8 @@
       "kanaal": "Q6",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     },
     {
       "type": "gnd",
@@ -406,7 +429,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "",
+      "storing_los": false
     },
     {
       "type": "voeding",
@@ -423,7 +447,8 @@
       "kanaal": "U2",
       "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": "afwijkend"
+      "storing": "afwijkend",
+      "storing_los": false
     },
     {
       "type": "voeding",
@@ -440,7 +465,8 @@
       "kanaal": "U3",
       "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": "afwijkend"
+      "storing": "afwijkend",
+      "storing_los": false
     },
     {
       "type": "voeding",
@@ -457,7 +483,8 @@
       "kanaal": "U4",
       "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": "afwijkend"
+      "storing": "afwijkend",
+      "storing_los": false
     },
     {
       "type": "relaiswisselcontact",
@@ -474,7 +501,8 @@
       "kanaal": "U6",
       "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": "klapper"
+      "storing": "klapper",
+      "storing_los": false
     },
     {
       "type": "relaiswisselcontact",
@@ -491,7 +519,8 @@
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": "vast"
+      "storing": "vast",
+      "storing_los": false
     }
   ],
   "wires": [

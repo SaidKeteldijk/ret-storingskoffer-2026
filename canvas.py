@@ -937,6 +937,15 @@ class CircuitCanvas(QWidget):
                 merged["kanaal"] = ""
             comps.append(Component(**merged))
         self.components = comps
+        # Contacten van hetzelfde relais die meedoen, delen hun storing. Een
+        # bestand van voor die regel kan ze nog verschillend hebben; de eerste
+        # defecte in de groep is dan leidend.
+        for comp in comps:
+            if comp.defect and volgt_relais(comp):
+                zusters = [z for z in comps if z is not comp and volgt_relais(z)
+                           and z.label == comp.label]
+                if any(not z.defect for z in zusters):
+                    deel_storing(comps, comp)
         self.wires           = [Wire(**w) for w in data.get("wires", [])]
         self.exam_time_minutes = data.get("exam_time_minutes", 10)
         # Altijd hernummeren na laden zodat nummering altijd klopt
