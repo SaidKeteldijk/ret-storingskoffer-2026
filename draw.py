@@ -161,7 +161,8 @@ def _side_text_x(x, small_offset, large_offset):
     return x + small_offset if x > 0 else x - large_offset
 
 
-def _ec_spdt(p, label, cs, positie_c=False, flipped=False):
+def _ec_spdt(p, label, cs, positie_c=False, flipped=False, kleur=C_GREEN,
+             los=False):
     """
     2-weg wisselschakelaar (SPDT) gecentreerd op (0,0).
 
@@ -169,7 +170,6 @@ def _ec_spdt(p, label, cs, positie_c=False, flipped=False):
     oriëntatie overeenkomt met de gewenste editorweergave, zonder de logica of
     contactvolgorde te veranderen.
     """
-    kleur = "#6dd6a8"
     rc = 5
 
     if flipped:
@@ -188,7 +188,15 @@ def _ec_spdt(p, label, cs, positie_c=False, flipped=False):
 
     p.drawLine(_towards_zero(com_x, rc), com_y, 0, 0)
 
-    if positie_c:
+    if los:
+        # Klapperstoring, losse fase: de tong hangt tussen beide contacten
+        # in en raakt geen van beide.
+        p.setPen(QPen(QColor(kleur), 2))
+        p.drawLine(0, 0, round(a_x * 0.7), 0)
+        p.setPen(QPen(QColor(kleur + "55"), 1, Qt.DashLine))
+        p.drawLine(0, 0, _towards_zero(a_x, 3), _towards_zero(a_y, 3))
+        p.drawLine(0, 0, _towards_zero(b_x, 3), _towards_zero(b_y, 3))
+    elif positie_c:
         p.setPen(QPen(QColor(kleur), 2))
         p.drawLine(0, 0, _towards_zero(b_x, 3), _towards_zero(b_y, 3))
         p.setPen(QPen(QColor(kleur + "55"), 1, Qt.DashLine))
@@ -223,8 +231,9 @@ def _ec_spdt(p, label, cs, positie_c=False, flipped=False):
     _tekst(p, b_x, _zijkant(b_y, 26), cs + 2)
 
 
-def _ec_rspdt(p, label, cs, positie_c=False, flipped=False):
-    _ec_spdt(p, label, cs, positie_c=positie_c, flipped=flipped)
+def _ec_rspdt(p, label, cs, positie_c=False, flipped=False, los=False):
+    _ec_spdt(p, label, cs, positie_c=positie_c, flipped=flipped, kleur=C_MAUVE,
+             los=los)
 
 
 def _ec_relaisspoel(p, label, cs, actief=False):
@@ -254,7 +263,7 @@ def _ec_relaisspoel(p, label, cs, actief=False):
 
 
 def _ec_relaiscontact(p, label, cs, gesloten=False):
-    kleur = C_GREEN if gesloten else C_MAUVE
+    kleur = C_MAUVE
     p.setPen(QPen(QColor(kleur), 2))
     p.drawLine(-CONN, 0, -9, 0)
     p.drawLine(9, 0, CONN, 0)

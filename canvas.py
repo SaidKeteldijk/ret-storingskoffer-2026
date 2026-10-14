@@ -6,6 +6,7 @@ RET N.V. | Said Keteldijk (1045604)
 
 import json
 import math
+import re
 import subprocess
 import sys
 import time
@@ -82,9 +83,9 @@ class GPIOConfigDialog(QDialog):
             QPushButton:hover {{ background:{C_BORDER}; }}
         """)
 
-        self.comp_indices = [
-            i for i, c in enumerate(components) if c.type in GPIO_MEET_TYPES
-        ]
+        self.comp_indices = sorted(
+            (i for i, c in enumerate(components) if c.type in GPIO_MEET_TYPES),
+            key=lambda i: lijst_volgorde(components[i]))
         self.components = components
 
         layout = QVBoxLayout(self)
@@ -239,6 +240,196 @@ class GPIOConfigDialog(QDialog):
 # ═══════════════════════════════════════════════
 #  STORINGEN DIALOOG
 # ═══════════════════════════════════════════════
+class KoppelingenDialog(QDialog):
+    """
+    Overzicht van wat in de tekening aan elkaar gekoppeld is.
+
+    Een relaiscontact volgt de spoel met hetzelfde label: contact K2 schakelt
+    zodra spoel K2 bekrachtigd is. Dat label is dus de koppeling. Deze dialoog
+    laat per spoel zien welke contacten erbij horen en laat een contact aan
+    een andere spoel hangen. Een gewijzigd contact krijgt manual_label, zodat
+    het automatisch hernummeren het niet weer losmaakt.
+    """
+
+    LOS = "— geen spoel —"
+
+    def __init__(self, components: List[Component], parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Koppelingen in de schakeling")
+        self.setMinimumWidth(640)
+        self.setStyleSheet(f"""
+            QDialog, QWidget {{ background:{C_BG}; color:{C_TEXT}; }}
+            QTableWidget {{ gridline-color:{C_BORDER}; border:1px solid {C_BORDER};
+                            font-family:'Courier New'; font-size:11px; }}
+            QHeaderView::section {{ background:{C_SIDE}; color:{C_MUTED};
+                                    font-family:'Courier New'; font-size:10px;
+                                    padding:4px; border:none;
+                                    border-bottom:1px solid {C_BORDER}; }}
+            QComboBox {{ background:{C_SIDE}; color:{C_TEXT};
+                         border:1px solid {C_BORDER}; border-radius:3px;
+                         padding:2px 6px; font-family:'Courier New'; }}
+            QComboBox QAbstractItemView {{ background:{C_SIDE}; color:{C_TEXT}; }}
+            QPushButton {{ background:{C_BG}; color:{C_TEXT};
+                           border:1px solid {C_BORDER}; border-radius:4px;
+                           padding:6px 14px; font-family:'Courier New'; }}
+            QPushButton:hover {{ background:{C_BORDER}; }}
+        """)
+        self.components = components
+        self.spoelen = sorted({c.label for c in components
+                               if c.type == TOOL_RCOIL and c.label})
+        self.contact_indices = [i for i, c in enumerate(components)
+                                if c.type in (TOOL_RCONT, TOOL_RSPDT)]
+        self._keuzes: Dict[int, QComboBox] = {}
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(10)
+        layout.setContentsMargins(16, 16, 16, 12)
+
+        overzicht = QLabel(self._overzicht_tekst())
+        overzicht.setStyleSheet(
+            f"color:{C_TEXT}; font-family:'Courier New'; font-size:11px;")
+        overzicht.setWordWrap(True)
+        layout.addWidget(overzicht)
+
+        uitleg = QLabel(
+            "Een contact volgt de spoel met hetzelfde label. Kies hieronder per "
+            "contact de spoel waar het bij hoort; het label van het contact wordt "
+            "dan gelijk aan dat van de spoel.")
+        uitleg.setStyleSheet(
+            f"color:{C_MUTED}; font-family:'Courier New'; font-size:10px;")
+        uitleg.setWordWrap(True)
+        layout.addWidget(uitleg)
+
+        self.table = QTableWidget(len(self.contact_indices), 4)
+        self.table.setHorizontalHeaderLabels(
+            ["Contact", "Type", "Hoort bij spoel", "Kanaal op de koffer"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setSelectionMode(QTableWidget.NoSelection)
+        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
+
+        for row, ci in enumerate(self.contact_indices):
+            comp = components[ci]
+            for kolom, tekst in ((0, comp.label or "?"),
+                                 (1, TOOL_LABELS.get(comp.type, comp.type)),
+                                 (3, comp.kanaal or "—")):
+                item = QTableWidgetItem(tekst)
+                item.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, kolom, item)
+
+            keuze = QComboBox()
+            opties = list(self.spoelen)
+            if comp.label and comp.label not in opties:
+                opties.append(comp.label)
+            keuze.addItems(opties + [self.LOS])
+            if comp.label in opties:
+                keuze.setCurrentText(comp.label)
+            else:
+                keuze.setCurrentText(self.LOS)
+            self.table.setCellWidget(row, 2, keuze)
+            self._keuzes[ci] = keuze
+
+        layout.addWidget(self.table)
+
+        btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        btns.accepted.connect(self.accept)
+        btns.rejected.connect(self.reject)
+        btns.setStyleSheet(
+            f"QPushButton {{ background:{C_BG}; color:{C_TEXT}; "
+            f"border:1px solid {C_BORDER}; border-radius:4px; padding:6px 18px; }}"
+            f"QPushButton:hover {{ background:{C_BORDER}; }}")
+        layout.addWidget(btns)
+
+    def _overzicht_tekst(self) -> str:
+        """Per spoel de contacten die haar volgen, plus wat los hangt."""
+        regels = []
+        contacten = [self.components[i] for i in self.contact_indices]
+        for spoel in self.spoelen:
+            bij = [f"{TOOL_LABELS.get(c.type, c.type).lower()}"
+                   + (f" [{c.kanaal}]" if c.kanaal else "")
+                   for c in contacten if c.label == spoel]
+            spoelen_knop = [c.kanaal for c in self.components
+                            if c.type == TOOL_RCOIL and c.label == spoel and c.kanaal]
+            kop = f"Spoel {spoel}" + (f" [{spoelen_knop[0]}]" if spoelen_knop else "")
+            regels.append(f"{kop}  →  " + (", ".join(bij) if bij else "geen contacten"))
+        los = [c for c in contacten if c.label not in self.spoelen]
+        if los:
+            regels.append("Zonder spoel: " + ", ".join(
+                f"{c.label or '?'} ({TOOL_LABELS.get(c.type, c.type).lower()})"
+                + (f" [{c.kanaal}]" if c.kanaal else "") for c in los))
+        if not self.spoelen and not contacten:
+            return "Deze schakeling bevat geen relais."
+        return "\n".join(regels)
+
+    def apply(self) -> int:
+        """Pas de gekozen spoel toe op elk contact; geeft het aantal wijzigingen."""
+        gewijzigd = 0
+        for ci, keuze in self._keuzes.items():
+            comp = self.components[ci]
+            nieuw = keuze.currentText()
+            if nieuw == self.LOS or nieuw == comp.label:
+                continue
+            comp.label = nieuw
+            comp.manual_label = True
+            gewijzigd += 1
+        return gewijzigd
+
+
+# Volgorde van de soorten in de storingen- en koppellijst. Alle schakelaars
+# delen een groep omdat ze samen doortellen (S1, S2, S3), en relaisspoelen
+# en hun contacten ook, zodat een contact direct onder zijn spoel staat.
+LIJST_GROEPEN = [
+    {TOOL_POWER},
+    {TOOL_SWITCH, TOOL_SW2P_NO, TOOL_SW2P_NC, TOOL_SPDT},
+    {TOOL_RCOIL, TOOL_RCONT, TOOL_RSPDT},
+    {TOOL_LAMP},
+    {TOOL_MOTOR},
+    {TOOL_NETLABEL},
+    {TOOL_GND},
+]
+
+
+def lijst_volgorde(comp):
+    """
+    Sorteersleutel voor de storingen- en koppellijst: eerst per groep, dan op
+    label met de cijfers als getal (S2 voor S10), dan de spoel voor haar
+    contacten, en bij gelijke labels de contactnummers.
+    """
+    groep = next((i for i, g in enumerate(LIJST_GROEPEN) if comp.type in g),
+                 len(LIJST_GROEPEN))
+    delen = re.split(r"(\d+)", comp.label or "")
+    sleutel = tuple((0, int(d)) if d.isdigit() else (1, d.lower())
+                    for d in delen if d)
+    spoel_eerst = 0 if comp.type == TOOL_RCOIL else 1
+    return (groep, sleutel, spoel_eerst, comp.contact_start)
+
+
+def volgt_relais(comp) -> bool:
+    """Neemt dit relaiscontact de storing van zijn zustercontacten over?"""
+    return (comp.type in (TOOL_RCONT, TOOL_RSPDT) and bool(comp.label)
+            and not getattr(comp, 'storing_los', False))
+
+
+def deel_storing(components, bron) -> int:
+    """
+    Zet de storing van een relaiscontact ook op de andere contacten van
+    hetzelfde relais (zelfde label) die meedoen. Een soort die bij een
+    zustercontact niet bestaat, bijvoorbeeld omdat dat contact een
+    meetpunt is, wordt daar overgeslagen; alleen aan/uit gaat dan mee.
+    """
+    if not volgt_relais(bron):
+        return 0
+    n = 0
+    for ander in components:
+        if ander is bron or not volgt_relais(ander) or ander.label != bron.label:
+            continue
+        ander.defect = bron.defect
+        if bron.storing in storing_soorten(ander):
+            ander.storing = bron.storing
+        n += 1
+    return n
+
+
 def storing_soorten(comp) -> List[str]:
     """Welke soorten storing bij dit component passen."""
     if is_spanning(comp.kanaal):
@@ -296,10 +487,10 @@ class FaultConfigDialog(QDialog):
 
         # Componenten met een zinvolle storing, plus elk meetpunt: daar is
         # de storing een afwijkende spanning op de klem.
-        self.comp_indices = [
-            i for i, c in enumerate(components)
-            if c.type in self._FAULT_TYPES or is_spanning(c.kanaal)
-        ]
+        self.comp_indices = sorted(
+            (i for i, c in enumerate(components)
+             if c.type in self._FAULT_TYPES or is_spanning(c.kanaal)),
+            key=lambda i: lijst_volgorde(components[i]))
         self.components = components
 
         layout = QVBoxLayout(self)
@@ -314,9 +505,10 @@ class FaultConfigDialog(QDialog):
             f"color:{C_YELLOW}; font-family:'Courier New'; font-size:10px;")
         layout.addWidget(info)
 
-        self.table = QTableWidget(len(self.comp_indices), 5)
+        self.table = QTableWidget(len(self.comp_indices), 6)
         self.table.setHorizontalHeaderLabels(
-            ["Label", "Type", "Soort storing", "Gedrag", "Defect"])
+            ["Label", "Type", "Soort storing", "Gedrag", "Defect",
+             "Volgt relais"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionMode(QTableWidget.NoSelection)
@@ -324,6 +516,8 @@ class FaultConfigDialog(QDialog):
 
         self._checkboxes: Dict[int, QCheckBox] = {}
         self._soorten: Dict[int, QComboBox] = {}
+        self._volgt: Dict[int, QCheckBox] = {}
+        self._bezig = False
 
         for row, ci in enumerate(self.comp_indices):
             comp = components[ci]
@@ -363,6 +557,33 @@ class FaultConfigDialog(QDialog):
             cb_layout.setContentsMargins(0, 0, 0, 0)
             self.table.setCellWidget(row, 4, cb_widget)
             self._checkboxes[ci] = cb
+
+            if comp.type in (TOOL_RCONT, TOOL_RSPDT):
+                vb = QCheckBox()
+                vb.setChecked(not getattr(comp, 'storing_los', False))
+                vb.setToolTip("Aan: deze storing geldt ook voor de andere "
+                              "contacten van hetzelfde relais")
+                vb_widget = QWidget()
+                vb_layout = QHBoxLayout(vb_widget)
+                vb_layout.addWidget(vb)
+                vb_layout.setAlignment(Qt.AlignCenter)
+                vb_layout.setContentsMargins(0, 0, 0, 0)
+                self.table.setCellWidget(row, 5, vb_widget)
+                self._volgt[ci] = vb
+            else:
+                leeg = QTableWidgetItem("—")
+                leeg.setTextAlignment(Qt.AlignCenter)
+                self.table.setItem(row, 5, leeg)
+
+        # Een wijziging op een meedoend relaiscontact springt meteen over op
+        # de andere contacten van hetzelfde relais, zodat je het ziet.
+        for ci in self._volgt:
+            self._checkboxes[ci].toggled.connect(
+                lambda _v, c=ci: self._verspreid(c))
+            self._soorten[ci].currentIndexChanged.connect(
+                lambda _i, c=ci: self._verspreid(c))
+            self._volgt[ci].toggled.connect(
+                lambda aan, c=ci: self._weer_volgen(c) if aan else None)
 
         layout.addWidget(self.table)
 
@@ -406,6 +627,32 @@ class FaultConfigDialog(QDialog):
             tekst = self._FAULT_TYPES.get(comp.type, "—")
         self.table.item(row, 3).setText(tekst)
 
+    def _zusters(self, ci: int):
+        comp = self.components[ci]
+        return [c for c in self._volgt
+                if c != ci and self.components[c].label == comp.label
+                and self._volgt[c].isChecked()]
+
+    def _weer_volgen(self, ci: int):
+        """Een contact dat weer meedoet neemt de storing van zijn relais over."""
+        zusters = self._zusters(ci)
+        if zusters:
+            self._verspreid(zusters[0])
+
+    def _verspreid(self, ci: int):
+        if self._bezig or not self._volgt[ci].isChecked():
+            return
+        self._bezig = True
+        try:
+            soort = self._gekozen(ci)
+            for c in self._zusters(ci):
+                self._checkboxes[c].setChecked(self._checkboxes[ci].isChecked())
+                soorten = self._soorten[c].property("soorten")
+                if soort in soorten:
+                    self._soorten[c].setCurrentIndex(soorten.index(soort))
+        finally:
+            self._bezig = False
+
     def _set_all(self, state: bool):
         for cb in self._checkboxes.values():
             cb.setChecked(state)
@@ -415,6 +662,8 @@ class FaultConfigDialog(QDialog):
         for ci, cb in self._checkboxes.items():
             self.components[ci].defect = cb.isChecked()
             self.components[ci].storing = self._gekozen(ci)
+            if ci in self._volgt:
+                self.components[ci].storing_los = not self._volgt[ci].isChecked()
 
 
 # ═══════════════════════════════════════════════
@@ -678,7 +927,7 @@ class CircuitCanvas(QWidget):
                          "defect": False, "manual_label": False,
                          "spanning_aan": SPANNING_AAN_STANDAARD,
                          "spanning_storing": SPANNING_STORING_STANDAARD,
-                         "storing": ""}
+                         "storing": "", "storing_los": False}
         comps = []
         for c in data.get("components", []):
             merged = {**comp_defaults, **c}
@@ -919,6 +1168,7 @@ class CircuitCanvas(QWidget):
             self._hernoem_component(self.selected)
         elif k == Qt.Key_F and self.selected and self.tool == TOOL_SELECT:
             self.selected.defect = not self.selected.defect
+            deel_storing(self.components, self.selected)
         elif k == Qt.Key_C and self.selected and self.tool == TOOL_SELECT:
             self._wijzig_contactnummers(self.selected)
         elif k in (Qt.Key_Delete, Qt.Key_Backspace):
@@ -1217,8 +1467,17 @@ class CircuitCanvas(QWidget):
         fm = p.fontMetrics()
         bw = fm.horizontalAdvance(txt) + 8
         bh = fm.height() + 3
-        bx = mx + r + round(5 * f)
-        by = my + round(5 * f)
+        # Het label staat onder het symbool, niet bij het aansluitpunt: daar
+        # viel het over de draad en de contactnummers heen. Bij een staand
+        # component loopt onder het symbool de draad, dus daar schuift het
+        # label opzij, net als de S/Q/D-badges.
+        cx, cy = self._px(comp.col, comp.row)
+        if comp.type in SINGLE_TERMINAL:
+            bx, by = mx + r + round(5 * f), my + round(5 * f)
+        elif comp.rotation % 180 == 90:
+            bx, by = cx + round(20 * f), cy + round(13 * f)
+        else:
+            bx, by = cx - bw // 2, cy + round(32 * f)
         p.setPen(QPen(QColor(C_SKY), 1))
         p.setBrush(QBrush(QColor(C_BG)))
         p.drawRoundedRect(bx, by, bw, bh, 3, 3)
@@ -1247,6 +1506,7 @@ class CircuitCanvas(QWidget):
         if self.mode == "sim":
             active    = self.sim.comp_is_active(idx)
             closed    = self.sim.switch_closed(idx)
+            los       = self.sim.klappert_los(comp)
             energized = self.sim.coil_energized(l)
             rc_closed = self.sim.contact_stand(idx)
 
@@ -1260,19 +1520,19 @@ class CircuitCanvas(QWidget):
                     active = False
 
             if comp.type == TOOL_SWITCH:
-                _ec_schakelaar(p, l, cs, gesloten=closed)
+                _ec_schakelaar(p, l, cs, gesloten=closed and not los)
             elif comp.type == TOOL_SW2P_NO:
-                _ec_schakelaar2p(p, l, cs, gesloten=closed, nc=False)
+                _ec_schakelaar2p(p, l, cs, gesloten=closed and not los, nc=False)
             elif comp.type == TOOL_SW2P_NC:
                 _ec_schakelaar2p(p, l, cs, gesloten=closed, nc=True)
             elif comp.type == TOOL_SPDT:
-                _ec_spdt(p, l, cs, positie_c=closed, flipped=True)
+                _ec_spdt(p, l, cs, positie_c=closed, flipped=True, los=los)
             elif comp.type == TOOL_RCOIL:
                 _ec_relaisspoel(p, l, cs, actief=energized)
             elif comp.type == TOOL_RCONT:
-                _ec_relaiscontact(p, l, cs, gesloten=rc_closed)
+                _ec_relaiscontact(p, l, cs, gesloten=rc_closed and not los)
             elif comp.type == TOOL_RSPDT:
-                _ec_rspdt(p, l, cs, positie_c=rc_closed, flipped=True)
+                _ec_rspdt(p, l, cs, positie_c=rc_closed, flipped=True, los=los)
             elif comp.type == TOOL_MOTOR:
                 _ec_motor(p, l, cs, actief=active)
             elif comp.type == TOOL_LAMP:
@@ -1310,7 +1570,7 @@ class CircuitCanvas(QWidget):
         p.restore()
         p.setPen(QColor(C_MUTED))
         p.setFont(QFont("Courier New", 8))
-        p.drawText(cx + CONN + 4, cy - HW // 2, "[R] draaien  [Del] wissen  [F] storing")
+        p.drawText(cx + CONN + 4, cy - HW // 2, "[R] draaien  [N] naam  [C] contacten  [F] storing  [Del] wissen")
 
     def _draw_wire_preview(self, p):
         if not (self.wire_start and self.muis_grid):
@@ -1736,6 +1996,26 @@ class GPIOMonitorPanel(QWidget):
 
 
 # ═══════════════════════════════════════════════
+SNELTOETSEN_TEKST = (
+    "Sneltoetsen (geselecteerd symbool):\n"
+    "  R      roteren\n"
+    "  N      naam wijzigen\n"
+    "  C      contactnummers\n"
+    "  F      storing aan/uit\n"
+    "  Del    verwijderen\n"
+    "  Esc    selectie of draad annuleren\n"
+    "Muis:\n"
+    "  slepen        verplaatsen\n"
+    "  rechtsklik    verwijderen\n"
+    "  Draad: klik begin, klik eind\n"
+    "Knoppen boven de tekening:\n"
+    "  Storingen           soort storing per symbool\n"
+    "  Hardware koppeling  S/Q/D/U-kanaal per symbool\n"
+    "  Koppelingen         welk contact bij welke spoel\n"
+    "\n⊕ Voeding + ⏚ GND nodig voor simulatie"
+)
+
+
 def _knop_stijl(actief=C_BLUE) -> str:
     return f"""
         QPushButton {{
@@ -1828,14 +2108,7 @@ class MainWindow(QMainWindow):
             k.clicked.connect(slot); p1l.addWidget(k)
 
         p1l.addStretch()
-        tip = QLabel("Sleep → verplaatsen\nR → roteren\n"
-                     "Del → verwijderen\nEsc → annuleer\n\n"
-                     "🔗 Koppelen:\n"
-                     "  klik A → klik B\n"
-                     "  klik A zelf → ontkoppel\n"
-                     "  schakelaar→schakelaar\n"
-                     "  schakelaar→relaisspoel\n\n"
-                     "⊕ Voeding + ⏚ GND\nnodig voor simulatie")
+        tip = QLabel(SNELTOETSEN_TEKST)
         tip.setStyleSheet(f"color:{C_MUTED}; font-size:10px; font-family:'Courier New';")
         p1l.addWidget(tip)
         self.zij_stack.addWidget(p1)
@@ -1845,7 +2118,7 @@ class MainWindow(QMainWindow):
         p2l.setContentsMargins(0, 0, 0, 0); p2l.setSpacing(4)
         p2l.addWidget(self._sec("EXAMEN VOORBEREIDEN"))
 
-        k_gpio2 = QPushButton("⚙  GPIO koppeling")
+        k_gpio2 = QPushButton("⚙  Hardware koppeling")
         k_gpio2.setStyleSheet(_knop_stijl(C_PEACH))
         k_gpio2.clicked.connect(self._gpio_config)
         p2l.addWidget(k_gpio2)
@@ -1972,6 +2245,14 @@ class MainWindow(QMainWindow):
         self.gpio_knop.clicked.connect(self._gpio_config)
         tf_l.addWidget(self.gpio_knop)
 
+        self.koppel_knop = QPushButton("⇄  Koppelingen")
+        self.koppel_knop.setVisible(False)
+        self.koppel_knop.setStyleSheet(
+            f"background:{C_MAUVE}; color:{C_SIDE}; font-weight:bold; "
+            f"font-family:'Courier New'; border:none; border-radius:4px; padding:4px 10px;")
+        self.koppel_knop.clicked.connect(self._koppel_config)
+        tf_l.addWidget(self.koppel_knop)
+
         rl.addWidget(titel_frame)
 
         # Canvas in scrollbaar gebied — tekenruimte is groter dan scherm
@@ -2054,6 +2335,7 @@ class MainWindow(QMainWindow):
             self.stop_sim_knop.setVisible(False)
             self.storing_knop.setVisible(False)
             self.gpio_knop.setVisible(False)
+            self.koppel_knop.setVisible(False)
             self.gpio_monitor.setVisible(False)
             self.canvas.setFocus()
         elif bewerk:
@@ -2061,6 +2343,7 @@ class MainWindow(QMainWindow):
             self.stop_sim_knop.setVisible(False)
             self.storing_knop.setVisible(True)
             self.gpio_knop.setVisible(True)
+            self.koppel_knop.setVisible(True)
             self.canvas.setFocus()
         elif examen:
             # Schakel naar view-modus zodat de instructeur niets per ongeluk wijzigt
@@ -2068,6 +2351,7 @@ class MainWindow(QMainWindow):
             self.stop_sim_knop.setVisible(False)
             self.storing_knop.setVisible(False)
             self.gpio_knop.setVisible(False)
+            self.koppel_knop.setVisible(False)
             # Sync tijdspinner met opgeslagen waarde in canvas
             self.exam_spin.setValue(self.canvas.exam_time_minutes)
             self.canvas.setFocus()
@@ -2082,6 +2366,7 @@ class MainWindow(QMainWindow):
         self.stop_sim_knop.setVisible(False)
         self.storing_knop.setVisible(False)
         self.gpio_knop.setVisible(False)
+        self.koppel_knop.setVisible(False)
         self.gpio_monitor.setVisible(False)
         self.titel.setText(f"  {naam}")
         self.status.setText(f"Geladen: {naam}")
@@ -2128,6 +2413,7 @@ class MainWindow(QMainWindow):
         self.stop_sim_knop.setVisible(True)
         self.storing_knop.setVisible(True)
         self.gpio_knop.setVisible(True)
+        self.koppel_knop.setVisible(True)
         self.examen_timer_lbl.setVisible(False)   # geen examentimer in gewone sim
         self.gpio_monitor.setVisible(True)
         self.gpio_monitor.refresh_layout(self.canvas.components)
@@ -2152,10 +2438,23 @@ class MainWindow(QMainWindow):
         self.stop_sim_knop.setVisible(False)
         self.storing_knop.setVisible(False)
         self.gpio_knop.setVisible(False)
+        self.koppel_knop.setVisible(False)
         self.gpio_monitor.setVisible(False)
         naam = self.titel.text().replace("  ▶  ", "  ").replace(" — SIMULATIE", "")
         self.titel.setText(naam)
         self.status.setText("Simulatie gestopt")
+
+    def _koppel_config(self):
+        """Open het overzicht van relaiskoppelingen en pas wijzigingen toe."""
+        dlg = KoppelingenDialog(self.canvas.components, parent=self)
+        if dlg.exec_() != QDialog.Accepted:
+            return
+        gewijzigd = dlg.apply()
+        if gewijzigd and self.canvas.mode == "sim":
+            self.canvas.sim.solve()
+        self.canvas.update()
+        if gewijzigd:
+            self.status.setText(f"{gewijzigd} contact(en) aan een andere spoel gekoppeld")
 
     def _storing_config(self):
         """Open storingen-configuratiedialoog."""
@@ -2218,6 +2517,7 @@ class MainWindow(QMainWindow):
         # Koppel GPIO-monitor (niet zichtbaar in examen)
         self.gpio_monitor.setVisible(False)
         self.gpio_knop.setVisible(False)
+        self.koppel_knop.setVisible(False)
 
         # Zet de schakeling op het monteursscherm. Dit gebeurt bewust één keer:
         # de monteur krijgt een statische tekening van de opgave.

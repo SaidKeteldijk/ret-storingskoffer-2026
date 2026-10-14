@@ -39,6 +39,7 @@ class Component:
     spanning_aan:     float = SPANNING_AAN_STANDAARD
     spanning_storing: float = SPANNING_STORING_STANDAARD
     storing:          str = ""
+    storing_los:      bool = False   # contact volgt de storing van zijn relais niet
 
 
 @dataclass

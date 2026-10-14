@@ -1,0 +1,262 @@
+{
+  "components": [
+    {
+      "type": "voeding",
+      "col": 4,
+      "row": 4,
+      "label": "+V1",
+      "rotation": 90,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 8,
+      "row": 9,
+      "label": "56K4",
+      "rotation": 90,
+      "contact_start": 1,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": true,
+      "manual_label": true,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": "klapper"
+    },
+    {
+      "type": "relaisspoel",
+      "col": 9,
+      "row": 18,
+      "label": "K1",
+      "rotation": 90,
+      "contact_start": 4,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": "vast"
+    },
+    {
+      "type": "spdt",
+      "col": 9,
+      "row": 14,
+      "label": "S1",
+      "rotation": 90,
+      "contact_start": 6,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": "klapper"
+    },
+    {
+      "type": "gnd",
+      "col": 9,
+      "row": 21,
+      "label": "GND1",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "relaiswisselcontact",
+      "col": 18,
+      "row": 9,
+      "label": "K1",
+      "rotation": 90,
+      "contact_start": 9,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": "vast"
+    },
+    {
+      "type": "relaisspoel",
+      "col": 18,
+      "row": 14,
+      "label": "K2",
+      "rotation": 270,
+      "contact_start": 12,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": "vast"
+    },
+    {
+      "type": "gnd",
+      "col": 18,
+      "row": 21,
+      "label": "GND2",
+      "rotation": 0,
+      "contact_start": 0,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": ""
+    },
+    {
+      "type": "schakelaar",
+      "col": 25,
+      "row": 9,
+      "label": "S2",
+      "rotation": 90,
+      "contact_start": 14,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": true,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": "klapper"
+    },
+    {
+      "type": "lamp",
+      "col": 25,
+      "row": 14,
+      "label": "Q1",
+      "rotation": 90,
+      "contact_start": 16,
+      "manual_contact_start": false,
+      "gpio_pin": -1,
+      "gpio_dir": "IN",
+      "defect": false,
+      "manual_label": false,
+      "kanaal": "",
+      "spanning_aan": 24.0,
+      "spanning_storing": 12.0,
+      "storing": "vast"
+    }
+  ],
+  "wires": [
+    {
+      "c1": 7,
+      "r1": 8,
+      "c2": 7,
+      "r2": 4
+    },
+    {
+      "c1": 4,
+      "r1": 4,
+      "c2": 7,
+      "r2": 4
+    },
+    {
+      "c1": 9,
+      "r1": 21,
+      "c2": 9,
+      "r2": 19
+    },
+    {
+      "c1": 9,
+      "r1": 17,
+      "c2": 9,
+      "r2": 15
+    },
+    {
+      "c1": 8,
+      "r1": 13,
+      "c2": 8,
+      "r2": 10
+    },
+    {
+      "c1": 18,
+      "r1": 13,
+      "c2": 18,
+      "r2": 10
+    },
+    {
+      "c1": 17,
+      "r1": 8,
+      "c2": 17,
+      "r2": 4
+    },
+    {
+      "c1": 7,
+      "r1": 4,
+      "c2": 17,
+      "r2": 4
+    },
+    {
+      "c1": 18,
+      "r1": 21,
+      "c2": 18,
+      "r2": 15
+    },
+    {
+      "c1": 25,
+      "r1": 15,
+      "c2": 25,
+      "r2": 18
+    },
+    {
+      "c1": 25,
+      "r1": 18,
+      "c2": 18,
+      "r2": 18
+    },
+    {
+      "c1": 25,
+      "r1": 13,
+      "c2": 25,
+      "r2": 10
+    },
+    {
+      "c1": 25,
+      "r1": 8,
+      "c2": 25,
+      "r2": 4
+    },
+    {
+      "c1": 17,
+      "r1": 4,
+      "c2": 25,
+      "r2": 4
+    }
+  ],
+  "exam_time_minutes": 10,
+  "naam": "test43"
+}

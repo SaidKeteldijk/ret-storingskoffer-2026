@@ -9,13 +9,13 @@
       "contact_start": 1,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "relaiswisselcontact",
@@ -26,13 +26,13 @@
       "contact_start": 4,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "relaisspoel",
@@ -43,13 +43,13 @@
       "contact_start": 7,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
-      "kanaal": "",
+      "kanaal": "Q1",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "gnd",
@@ -77,13 +77,13 @@
       "contact_start": 0,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": false,
-      "kanaal": "",
-      "spanning_aan": 24.0,
-      "spanning_storing": 12.0,
-      "storing": ""
+      "kanaal": "U1",
+      "spanning_aan": 48.0,
+      "spanning_storing": 0.0,
+      "storing": "afwijkend"
     },
     {
       "type": "spdt",
@@ -97,10 +97,10 @@
       "gpio_dir": "IN",
       "defect": false,
       "manual_label": true,
-      "kanaal": "",
+      "kanaal": "S1",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "relaiswisselcontact",
@@ -111,13 +111,13 @@
       "contact_start": 12,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "spdt",
@@ -131,10 +131,10 @@
       "gpio_dir": "IN",
       "defect": false,
       "manual_label": true,
-      "kanaal": "",
+      "kanaal": "S2",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "spdt",
@@ -148,10 +148,10 @@
       "gpio_dir": "IN",
       "defect": false,
       "manual_label": true,
-      "kanaal": "",
+      "kanaal": "S3",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "relaisspoel",
@@ -162,13 +162,13 @@
       "contact_start": 21,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
-      "kanaal": "",
+      "kanaal": "Q3",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "relaisspoel",
@@ -179,13 +179,13 @@
       "contact_start": 23,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
-      "kanaal": "",
+      "kanaal": "Q2",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "spdt",
@@ -197,12 +197,12 @@
       "manual_contact_start": false,
       "gpio_pin": -1,
       "gpio_dir": "IN",
-      "defect": false,
+      "defect": true,
       "manual_label": true,
-      "kanaal": "",
+      "kanaal": "S4",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "klapper"
     },
     {
       "type": "gnd",
@@ -247,13 +247,13 @@
       "contact_start": 28,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "relaiswisselcontact",
@@ -264,13 +264,13 @@
       "contact_start": 31,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "schakelaar",
@@ -281,13 +281,13 @@
       "contact_start": 34,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
-      "defect": false,
+      "gpio_dir": "OUT",
+      "defect": true,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "klapper"
     },
     {
       "type": "relaisspoel",
@@ -298,13 +298,13 @@
       "contact_start": 36,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
-      "kanaal": "",
+      "kanaal": "Q5",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "spdt",
@@ -315,13 +315,13 @@
       "contact_start": 38,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "gnd",
@@ -349,13 +349,13 @@
       "contact_start": 41,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "spdt",
@@ -366,13 +366,13 @@
       "contact_start": 44,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
-      "kanaal": "",
-      "spanning_aan": 24.0,
+      "kanaal": "U5",
+      "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "afwijkend"
     },
     {
       "type": "relaisspoel",
@@ -383,13 +383,13 @@
       "contact_start": 47,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
-      "kanaal": "",
+      "kanaal": "Q6",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     },
     {
       "type": "gnd",
@@ -417,13 +417,13 @@
       "contact_start": 0,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": false,
-      "kanaal": "",
-      "spanning_aan": 24.0,
+      "kanaal": "U2",
+      "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "afwijkend"
     },
     {
       "type": "voeding",
@@ -434,13 +434,13 @@
       "contact_start": 0,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": false,
-      "kanaal": "",
-      "spanning_aan": 24.0,
+      "kanaal": "U3",
+      "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "afwijkend"
     },
     {
       "type": "voeding",
@@ -451,13 +451,13 @@
       "contact_start": 0,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": false,
-      "kanaal": "",
-      "spanning_aan": 24.0,
+      "kanaal": "U4",
+      "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "afwijkend"
     },
     {
       "type": "relaiswisselcontact",
@@ -468,13 +468,13 @@
       "contact_start": 49,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
-      "defect": false,
+      "gpio_dir": "OUT",
+      "defect": true,
       "manual_label": true,
-      "kanaal": "",
-      "spanning_aan": 24.0,
+      "kanaal": "U6",
+      "spanning_aan": 48.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "klapper"
     },
     {
       "type": "relaiswisselcontact",
@@ -485,13 +485,13 @@
       "contact_start": 52,
       "manual_contact_start": false,
       "gpio_pin": -1,
-      "gpio_dir": "IN",
+      "gpio_dir": "OUT",
       "defect": false,
       "manual_label": true,
       "kanaal": "",
       "spanning_aan": 24.0,
       "spanning_storing": 12.0,
-      "storing": ""
+      "storing": "vast"
     }
   ],
   "wires": [
@@ -818,6 +818,12 @@
       "r1": 6,
       "c2": 10,
       "r2": 6
+    },
+    {
+      "c1": 39,
+      "r1": 24,
+      "c2": 39,
+      "r2": 26
     }
   ],
   "exam_time_minutes": 10,

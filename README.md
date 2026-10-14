@@ -180,6 +180,27 @@ In de Bewerken-modus zijn de volgende componenten beschikbaar:
 
 Componenten met hetzelfde label worden automatisch aan elkaar gekoppeld. Een relaiscontact met label `K1` volgt dus de relaisspoel met label `K1`. De automatische nummering loopt per labelgroep door: alle soorten schakelaars tellen samen op als `S1`, `S2`, `S3`, ongeacht of het een eenpolige, tweepolige of wisselschakelaar is. Relaisspoelen en relaiscontacten houden juist een eigen telling, zodat spoel `K1` en contact `K1` standaard bij elkaar horen. Een label dat je zelf instelt wordt niet meer hernummerd en houdt zijn nummer bezet. Net Labels met dezelfde naam worden in de simulatie als één knooppunt behandeld, zodat een schakeling over meerdere bladen verdeeld kan worden zonder dat er een draad tussen getekend hoeft te worden.
 
+### Sneltoetsen en de knoppen boven de tekening
+
+In de Bewerken-modus staan de sneltoetsen onderaan de zijbalk. Ze werken op het geselecteerde symbool:
+
+| Toets | Werking |
+|-------|------------------------------------------|
+| R | Roteren in stappen van 90 graden |
+| N | Naam wijzigen; het label wordt dan niet meer automatisch hernummerd |
+| C | Contactnummers instellen |
+| F | Storing aan of uit |
+| Del of Backspace | Verwijderen |
+| Esc | Selectie of een begonnen draad annuleren |
+
+Verplaatsen gaat door te slepen, verwijderen kan ook met de rechtermuisknop, en een draad trek je door op het beginpunt en daarna op het eindpunt te klikken.
+
+In de storingen- en de koppellijst staan de componenten per soort gegroepeerd en op nummer gesorteerd: eerst de voedingen, dan alle schakelaars (S1, S2, S10), dan elke relaisspoel met haar contacten eronder, dan de lampen, motoren en net labels.
+
+Boven de tekening staan in de Bewerken-modus en tijdens de simulatie drie knoppen. **Storingen** stelt per symbool de soort storing in. **Hardware koppeling** hangt een symbool aan een kanaal van de koffer. **Koppelingen** laat zien welk relaiscontact bij welke spoel hoort en laat een contact aan een andere spoel hangen; zie het volgende hoofdstuk.
+
+Schakelaars en relaiscontacten zijn aan hun kleur uit elkaar te houden: alles wat met de hand bediend wordt is groen, alles wat door een spoel bediend wordt is paars. Dat geldt ook voor de twee 2-weg varianten, die verder hetzelfde symbool hebben.
+
 ## Het scherm van de monteur
 
 Het monteursscherm toont uitsluitend de schakeling die de instructeur heeft klaargezet, plus de resterende examentijd. Er is bewust geen menu, geen weergave van de stroomvoering en geen markering van de storing: de monteur ziet een statische tekening, zoals hij die in de praktijk ook op papier zou krijgen.
@@ -214,7 +235,7 @@ Per component kan de instructeur een storing instellen, en per component is er e
 | Motor | Draait niet, ook al staat er spanning op |
 | Lamp | Gaat niet branden, ook al staat er spanning op |
 
-**Klappert.** Het component wisselt elke 400 ms tussen werkend en defect. Een relaisspoel die klappert laat zijn contacten steeds los, zoals een relais met een te lage spoelspanning of een vervuild contact. Dat werkt door in de hele schakeling: alles achter die contacten gaat mee knipperen, inclusief een uitgang die eraan gekoppeld is. Een klapperende spoel K1 laat dus klem D1 knipperen zonder dat er iets met D1 zelf aan de hand is, en dat is precies het soort storing waarvan de oorzaak niet staat waar het verschijnsel zichtbaar is.
+**Klappert.** Het component wisselt elke 400 ms tussen werkend en defect. Een relaisspoel die klappert laat zijn contacten steeds los, zoals een relais met een te lage spoelspanning of een vervuild contact. Dat werkt door in de hele schakeling: alles achter die contacten gaat mee knipperen, inclusief een uitgang die eraan gekoppeld is. Een klapperende spoel K1 laat dus klem D1 knipperen zonder dat er iets met D1 zelf aan de hand is, en dat is precies het soort storing waarvan de oorzaak niet staat waar het verschijnsel zichtbaar is. Bij een wisselschakelaar of een 2-weg relaiscontact laat het contact in de losse fase helemaal los en verbindt het geen van beide standen. Dat is bewust anders dan de vaste storing, die het contact op B laat staan: in rust staat zo'n contact toch al op B, en dan zou een klapper onzichtbaar zijn. In de tekening is dat te zien: de tong van het wisselcontact staat in de losse fase recht tussen A en B in, en een gewone schakelaar of een relaiscontact staat dan open.
 
 De halve periode staat in `constants.py` als `KLAPPER_MS`. Zolang er een klapperstoring actief is, blijft de simulatie elke 50 ms doorrekenen, ook als er verder niets verandert.
 
@@ -222,9 +243,17 @@ De halve periode staat in `constants.py` als `KLAPPER_MS`. Zolang er een klapper
 
 **Afwijkende spanning.** Alleen voor een meetpunt. De klem geeft de ingestelde storingswaarde in plaats van de normale waarde. Door die waarde onder of boven de normale te zetten maak je een te lage of een te hoge spanning: 9 V waar 24 V hoort te staan wijst op een overgangsweerstand, 31 V waar 24 V hoort te staan op een verkeerd aangesloten voeding. Die waarde stel je in bij de koppeling, in de kolom "Bij storing".
 
+**Storing op een relaiscontact.** Contacten met hetzelfde label horen bij hetzelfde relais. Geef je een van die contacten een storing, dan nemen de andere contacten van dat relais hem over, zowel in de storingendialoog als met de F-toets. Een klapperstoring op één contact van 641K7 laat dus alle contacten van 641K7 klapperen. Wil je juist één los contact defect hebben, haal dan in de storingendialoog het vinkje **Volgt relais** bij dat contact weg; zet je het weer aan, dan neemt het de storing van de rest van het relais over. Een storing op de spoel zelf werkt altijd door op alle contacten, want die volgen de spoel.
+
 Welke soorten beschikbaar zijn hangt af van het component. Een schakelaar of relais kan vast of klapperend zijn; een component met een 48V-uitgang kan geen spanning geven of klapperen; een meetpunt kan een afwijkende waarde geven, geen spanning geven of klapperen.
 
 Een storing in de meting of in de uitgang raakt de schakeling zelf niet. Het component werkt elektrisch gewoon door en alleen wat eruit komt klopt niet. Een vaste of klapperende storing werkt wel door in de schakeling, want daar is het component zelf stuk.
+
+# De koppelingen tussen spoel en contact
+
+Een relaiscontact volgt de spoel met hetzelfde label: contact K2 schakelt zodra spoel K2 bekrachtigd is. Dat label is dus de koppeling, en er is verder geen verborgen verwijzing. De knop **Koppelingen** boven de tekening toont per spoel welke contacten haar volgen, welke contacten geen spoel hebben, en welk kanaal van de koffer eraan hangt.
+
+In dezelfde dialoog kies je per contact de spoel waar het bij hoort. Het contact krijgt dan het label van die spoel en wordt als handmatig gelabeld gemarkeerd, zodat het automatisch hernummeren het niet weer losmaakt. Een contact zonder spoel reageert in de simulatie nergens op, tenzij het aan een knop van de koffer gekoppeld is.
 
 # De koppeling met de koffer
 
@@ -290,7 +319,7 @@ Antwoordt een kaart niet, dan meldt de app dat en blijven de klemmen van die kaa
 
 Een meetpunt is een plek in de tekening waarvan de spanning op een klem van de koffer komt te staan. De monteur meet daar met een multimeter, net als aan een echte installatie. De acht klemmen worden gevoed door de spannings-DAC's van de twee DAC-printen: U1 tot en met U4 door print 1 en U5 tot en met U8 door print 2.
 
-Bijna elk component kan een meetpunt zijn, ook een net label of een voeding. GND valt er buiten, want daar staat altijd 0 V. Gemeten wordt er altijd op het **eerste aansluitpunt** van het component. In de tekening staat dat punt met een blauwe stip aangegeven, met het klemnummer ernaast, zodat er geen twijfel over kan bestaan waar de meting vandaan komt.
+Bijna elk component kan een meetpunt zijn, ook een net label of een voeding. GND valt er buiten, want daar staat altijd 0 V. Gemeten wordt er altijd op het **eerste aansluitpunt** van het component. In de tekening staat dat punt met een blauwe stip aangegeven, zodat er geen twijfel over kan bestaan waar de meting vandaan komt. Het klemnummer staat onder het symbool, bij een staand symbool rechts eronder.
 
 ## Hoe de spanning bepaald wordt
 

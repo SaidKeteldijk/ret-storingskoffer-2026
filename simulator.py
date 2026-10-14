@@ -102,6 +102,20 @@ class CircuitSimulator:
             return False
         return True
 
+    def klappert_los(self, comp) -> bool:
+        """
+        Zit dit component in de losse fase van een klapperstoring?
+
+        Een klapperend contact laat even helemaal los. Voor een gewone
+        schakelaar is dat hetzelfde als defect; voor een wisselcontact
+        niet, want daar betekent een vaste storing 'blijft op B staan' en
+        dat is in rust onzichtbaar. Tijdens de losse fase verbindt een
+        wisselcontact daarom geen van beide standen.
+        """
+        return (getattr(comp, 'defect', False)
+                and getattr(comp, 'storing', '') == STORING_KLAPPER
+                and not self.klapper_aan)
+
     def contact_stand(self, idx: int) -> bool:
         """Stand van een relaiscontact: van de spoel, of van de knop op de
         koffer zodra het contact daaraan gekoppeld is."""
@@ -161,7 +175,9 @@ class CircuitSimulator:
                 # SPDT: pts = [A (common), B, C]. Defect → vast op B (open).
                 if len(pts) >= 3:
                     a, b, cv = pts[0], pts[1], pts[2]
-                    if defect:
+                    if self.klappert_los(c):
+                        pass        # contact laat los: geen van beide standen
+                    elif defect:
                         add(a, b)   # vast in standaardpositie B
                     else:
                         positie_c = self.sw_states.get(i, False)
@@ -174,7 +190,9 @@ class CircuitSimulator:
                 # Relaiswisselcontact. Defect → koppeling verbroken, vast op B.
                 if len(pts) >= 3:
                     a, b, cv = pts[0], pts[1], pts[2]
-                    if defect:
+                    if self.klappert_los(c):
+                        pass        # contact laat los: geen van beide standen
+                    elif defect:
                         add(a, b)   # koppeling spoel↔contact verbroken
                     else:
                         if self.contact_stand(i):
